@@ -339,25 +339,27 @@ The musl builds are a nice bonus from cargo-dist. They're statically linked agai
 
 ## 9. Installer Scripts from cargo-dist
 
-### Shell Installer (`*-installer.sh`)
+> **Update (v1.1.0):** The installer scripts described below were **removed** from the distribution repository. Since this repo exists specifically for offline distribution, and these scripts require internet access to download from GitHub, they were dead weight. Users should use the DMGs (macOS), MSIs (Windows), or tar.xz archives (Linux) directly. See `USER-INSTALL-GUIDE.md` for step-by-step instructions.
 
-Each tool includes a ~52 KB shell installer script. These scripts:
+### Shell Installer (`*-installer.sh`) — removed
+
+Each tool originally included a ~52 KB shell installer script. These scripts:
 - Detect the user's OS and architecture
 - Download the appropriate binary from GitHub Releases
 - Install it to `~/.cargo/bin/` or a user-specified location
 - Add the install directory to `$PATH` if needed
 
-**Caveat for offline use:** These scripts are designed to download binaries from GitHub. For offline distribution, users should use the DMGs (macOS), MSIs (Windows), or tar.xz archives (Linux) directly instead.
+**Why removed:** These scripts are designed to download binaries from GitHub. They require an active internet connection and fail in air-gapped or firewall-restricted environments — the exact scenario this distribution repo was created for.
 
-### PowerShell Installer (`*-installer.ps1`)
+### PowerShell Installer (`*-installer.ps1`) — removed
 
-Similar to the shell installer but for Windows. Each is ~21 KB and handles:
+Similar to the shell installer but for Windows. Each was ~21 KB and handled:
 - Architecture detection
 - Download from GitHub Releases
 - Installation to the user's local app data directory
 - PATH modification
 
-Same offline caveat applies.
+**Why removed:** Same reason as above — requires internet access, defeating the purpose of offline distribution.
 
 ---
 

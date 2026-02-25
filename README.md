@@ -2,6 +2,8 @@
 
 Pre-built, offline-ready executables and installers for the three Qube TX CLI tools. Download the file for your OS and architecture, and run it — no package manager or internet connection required.
 
+> **New here?** See the **[User Install Guide](./USER-INSTALL-GUIDE.md)** for plain-English, step-by-step instructions on picking the right file and installing it — no technical background needed.
+
 | Tool | Version | Description |
 |------|---------|-------------|
 | **TR300** (`tr300`) | v3.6.0 | Machine reporting tool |
@@ -26,12 +28,10 @@ qube-reports-executables/
 │   │   ├── nd300-aarch64-apple-darwin.dmg                    # Apple Silicon (M1/M2/M3/M4)
 │   │   └── nd300-x86_64-apple-darwin.dmg                     # Intel Mac
 │   ├── windows/
-│   │   ├── nd-300-installer.ps1                              # PowerShell installer script
 │   │   ├── nd-300-x86_64-pc-windows-msvc.msi                # MSI installer
 │   │   ├── nd-300-x86_64-pc-windows-msvc.msi.sha256
 │   │   ├── nd-300-x86_64-pc-windows-msvc.zip                # Portable zip
 │   │   └── nd-300-x86_64-pc-windows-msvc.zip.sha256
-│   ├── nd-300-installer.sh                                   # Shell installer (macOS/Linux)
 │   └── sha256.sum                                            # Checksums for all release files
 ├── SD300-qube-system-diagnostics/
 │   └── (same structure as ND300, with sd-300 / sd300 prefixes)
@@ -40,9 +40,10 @@ qube-reports-executables/
 ├── CHANGELOG.md
 ├── DISCOVERIES.md
 ├── README.md
+├── USER-INSTALL-GUIDE.md
 └── qube-tx-build-runbook.md
 
-13 directories, 45 binary/installer files + 4 docs
+13 directories, 39 binary files + 5 docs
 ```
 
 ---
@@ -83,8 +84,6 @@ The `.dmg` files contain binaries **signed with Developer ID** (ES Development L
 
 6. **Eject** the DMG when done (drag to Trash or `hdiutil detach /Volumes/TR300-AppleSilicon`).
 
-**Alternative (shell installer):** Each tool folder also includes an `*-installer.sh` script that automates the download and install. Since you already have the binaries, the DMG method above is simpler.
-
 ---
 
 ### Windows
@@ -108,14 +107,6 @@ Two options: **MSI installer** (recommended) or **portable zip**.
 2. Open a terminal in that folder and run:
    ```
    .\tr300.exe
-   ```
-
-#### Option C: PowerShell Installer Script
-
-1. Open PowerShell and run:
-   ```powershell
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   .\tr-300-installer.ps1
    ```
 
 ---
@@ -145,8 +136,6 @@ Two options: **MSI installer** (recommended) or **portable zip**.
    sudo cp tr300 /usr/local/bin/
    tr300
    ```
-
-**Alternative (shell installer):** Run the `*-installer.sh` script in each tool's root folder.
 
 ---
 
@@ -230,19 +219,11 @@ The `.tar.xz` archives each contain a directory with the binary and associated f
 - **`musl`:** For Alpine Linux, Docker alpine-based images, and other musl-libc systems
 - **`aarch64-gnu`:** For ARM64 Linux devices (Raspberry Pi 4/5, AWS Graviton, Oracle Ampere, etc.)
 
-### Installer Scripts
-
-Each tool includes platform installer scripts from cargo-dist:
-- **`*-installer.sh`** (macOS/Linux): Shell script that detects your platform and installs the binary. Located at the root of each tool folder.
-- **`*-installer.ps1`** (Windows): PowerShell script for automated Windows installation. Located in the `windows/` subfolder.
-
-These scripts were designed for online use (downloading from GitHub releases) but can be adapted for offline use by modifying the download URLs to point to local file paths.
-
 ---
 
 ## File Inventory
 
-**45 files total** across 3 tools and 3 platforms:
+**39 files total** across 3 tools and 3 platforms:
 
 | Category | Per Tool | Total |
 |----------|---------|-------|
@@ -251,18 +232,17 @@ These scripts were designed for online use (downloading from GitHub releases) bu
 | Windows ZIPs | 1 (x86_64) | 3 |
 | Windows MSI checksums | 1 | 3 |
 | Windows ZIP checksums | 1 | 3 |
-| Windows PS1 installer | 1 | 3 |
 | Linux tar.xz (glibc) | 2 (aarch64 + x86_64) | 6 |
 | Linux tar.xz (musl) | 1 (x86_64) | 3 |
 | Linux checksums | 3 | 9 |
-| Shell installer | 1 | 3 |
 | SHA256 sum file | 1 | 3 |
-| **Total per tool** | **15** | **45** |
+| **Total per tool** | **13** | **39** |
 
 ---
 
 ## Additional Documentation
 
+- **[USER-INSTALL-GUIDE.md](./USER-INSTALL-GUIDE.md)** — Plain-English install guide for non-technical users (start here if you just need to install a tool)
 - **[CHANGELOG.md](./CHANGELOG.md)** — Release history and version tracking
 - **[DISCOVERIES.md](./DISCOVERIES.md)** — Detailed notes on the build/packaging process, findings about cargo-dist CI, macOS signing, and lessons learned
 - **[qube-tx-build-runbook.md](./qube-tx-build-runbook.md)** — Full runbook for building from source or creating custom installer formats (includes a "Quick Path" section for downloading pre-built releases)
