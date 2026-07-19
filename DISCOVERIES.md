@@ -5,6 +5,12 @@ Notes, findings, and lessons learned during the creation of the `qube-reports-ex
 **Date:** February 25, 2026
 **Author:** Emmett Shaughnessy / ES Development LLC
 
+> **Historical record:** This document describes the original v1 offline-bundle
+> investigation and DMG workflow. The current July 2026 bundle uses upstream
+> qualified universal PKGs, Global/Corporate Windows installers, stable
+> versionless asset names, and public SHA-256 sidecars. Use `README.md` and
+> `USER-INSTALL-GUIDE.md` for current distribution instructions.
+
 ---
 
 ## Table of Contents

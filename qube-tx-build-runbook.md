@@ -1,9 +1,8 @@
 # Qube TX — Cross-Platform Build & Distribution Runbook
 
 **Author:** Emmett Shaughnessy / Qube TX  
-**Last Updated:** February 25, 2026  
-**Build Mothership:** macOS (Apple Silicon)  
-**Secondary Build Machine:** Windows (for .msi only)
+**Last Updated:** July 19, 2026
+**Release source:** Qualified GitHub Actions artifacts
 
 ---
 
@@ -15,55 +14,29 @@
 
 | Tool | Repo | Version | Artifacts |
 |------|------|---------|-----------|
-| **TR300** | `QubeTX/qube-machine-report` | v3.6.0 | 6 platform binaries + MSI + installers |
-| **ND300** | `QubeTX/qube-network-diagnostics` | v2.6.0 | 6 platform binaries + MSI + installers |
-| **SD300** | `QubeTX/qube-system-diagnostics` | v1.2.1 | 6 platform binaries + MSI + installers |
+| **TR300** | `QubeTX/qube-machine-report` | v4.2.2 | Universal PKG, Global/Corporate MSI/EXE, portable archives |
+| **ND300** | `QubeTX/qube-network-diagnostics` | v3.7.3 | Universal PKG, Global/Corporate MSI/EXE, portable archives |
+| **SD300** | `QubeTX/qube-system-diagnostics` | v2.0.2 | Universal PKG, Global/Corporate MSI/EXE, portable archives |
 
 Each release includes:
-- **macOS**: aarch64 (Apple Silicon) + x86_64 (Intel) `.tar.xz`
-- **Windows**: x86_64 `.msi` installer + `.zip` portable archive
+- **macOS**: a signed, notarized, stapled universal `.pkg`
+- **Windows**: Global and Corporate `.msi`/`.exe` installers plus a portable `.zip`
 - **Linux**: aarch64 (glibc) + x86_64 (glibc) + x86_64 (musl/Alpine) `.tar.xz`
-- **Installer scripts**: shell script (macOS/Linux) + PowerShell script (Windows)
+- **Managed installers**: versionless shell and PowerShell entrypoints for online use
 - **SHA256 checksums** for integrity verification
 
 ### Download Commands
 
 ```bash
-# TR300
-gh release download v3.6.0 --repo QubeTX/qube-machine-report --dir ./tr300-release
+# Omit a tag to download the current qualified latest release.
+gh release download --repo QubeTX/qube-machine-report --dir ./tr300-release
 
-# ND300
-gh release download v2.6.0 --repo QubeTX/qube-network-diagnostics --dir ./nd300-release
-
-# SD300
-gh release download v1.2.1 --repo QubeTX/qube-system-diagnostics --dir ./sd300-release
+gh release download --repo QubeTX/qube-network-diagnostics --dir ./nd300-release
+gh release download --repo QubeTX/qube-system-diagnostics --dir ./sd300-release
 ```
 
-### macOS Code Signing (Post-Download)
-
-The CI-built macOS binaries are **unsigned**. If you have a Developer ID certificate, sign them locally for a better user experience (no Gatekeeper quarantine):
-
-```bash
-# Extract the binary
-tar -xf tr-300-aarch64-apple-darwin.tar.xz
-cd tr-300-aarch64-apple-darwin
-
-# Sign with your Developer ID (enables hardened runtime)
-codesign --sign "Developer ID Application: YOUR NAME (TEAMID)" --options runtime --force tr300
-codesign --verify --verbose tr300
-
-# Package as a DMG for easy distribution
-mkdir staging && cp tr300 staging/
-hdiutil create -volname "TR300-AppleSilicon" -srcfolder staging -ov -format UDZO tr300-aarch64.dmg
-codesign --sign "Developer ID Application: YOUR NAME (TEAMID)" tr300-aarch64.dmg
-```
-
-If notarization is set up (`xcrun notarytool store-credentials`), you can also notarize the DMG to eliminate all Gatekeeper warnings:
-
-```bash
-xcrun notarytool submit tr300-aarch64.dmg --keychain-profile "notarytool-profile" --wait
-xcrun stapler staple tr300-aarch64.dmg
-```
+The public PKGs are already signed, notarized, and stapled by their upstream
+release workflows. Do not repackage them into DMGs or re-sign released bytes.
 
 ### When to Use the Full Build Pipeline (Below)
 
@@ -74,6 +47,11 @@ The rest of this runbook (Phases 1–5) is only needed if you:
 - Need to set up your own CI/CD pipeline
 
 For most distribution scenarios, the pre-built releases above are the recommended approach.
+
+> The remaining local-build phases document the original February 2026 process
+> and are retained for historical/custom-format reference. They are not the
+> current release path and must not be used to replace qualified upstream PKGs,
+> MSI/EXE installers, or checksums.
 
 ---
 

@@ -1,9 +1,18 @@
-a81bf286227caaf24a93d9f32ad2c09b154be12fd477cdf73613e11768cd7981 *nd-300-aarch64-apple-darwin.tar.xz
-a81f3152d2411481e90cd10bce277eaabfe53b590bf6290b302a801db28d858c *nd-300-aarch64-unknown-linux-gnu.tar.xz
-29c088fc87e58210cb76676b0155bfcdce2c56902c28c7ac688772a5fe2e26e5 *nd-300-x86_64-apple-darwin.tar.xz
-b85317ae2396168f393a46d9f6772b55b7f026041a8323697d605ce0ea141950 *nd-300-x86_64-pc-windows-msvc.msi
-26b436d90e876cc2ce80e6a343930ebf7561d79854267d8a24ed3187dc23e7f3 *nd-300-x86_64-pc-windows-msvc.zip
-5ca1215c72738768b59af51f7b7ac4aba25884befb7905d02bb91a7b987dcadc *nd-300-x86_64-unknown-linux-gnu.tar.xz
-3c60a29f04f06c4a5ab797f6ccfda0f016443b36042f09fd0747731959d84da8 *nd-300-x86_64-unknown-linux-musl.tar.xz
-8d21b7d63c515b04f792680d4738bf9bfe026656e10a93a20305257a9390a772 *source.tar.gz
-
+483cf9e2cd6322fb8d64c67e11b5879cd05c56b320879a32aac34ed13c3d0ff7  linux/nd300-aarch64-unknown-linux-gnu.tar.xz
+9497998f4178becda2fde2eab18a4832d1fece3a3bfe7e54840a3184e4d8872c  linux/nd300-aarch64-unknown-linux-gnu.tar.xz.sha256
+a45ad33b82a27a6124656f68e90e7a65a8ab795464dd077bf5c7529a6e88d453  linux/nd300-x86_64-unknown-linux-gnu.tar.xz
+dd3d2de0c53f6ec41bee49202a6675a9f33f495e1c0bbc44d5b51a3786cf642c  linux/nd300-x86_64-unknown-linux-gnu.tar.xz.sha256
+04d53f3cffd042d044935180551ee6162a541c92e2fde4d7a3e1dc708cac9997  linux/nd300-x86_64-unknown-linux-musl.tar.xz
+32a1aeb636ccfe1719b564886ef1d2beddc4c7a15bf44d18212c85db67e5e68d  linux/nd300-x86_64-unknown-linux-musl.tar.xz.sha256
+0112df2d77139d02411b7139caee7ff98a4dab95d1656e92763863846d291bd1  macos/nd300-universal-apple-darwin.pkg
+f612fd7e94af183687b21dd7023cad85305b874bb45a326faf3d0bbf727e6631  macos/nd300-universal-apple-darwin.pkg.sha256
+1b36af76fe68481ca9b1995865117c21d5ea71e0575e9051e89d20b7b5d2cb8d  windows/nd300-x86_64-pc-windows-msvc-corporate-setup.exe
+b44817b9054bc8c45842537963bbe8ebe7ae440680de045d2c2918aba64f132b  windows/nd300-x86_64-pc-windows-msvc-corporate-setup.exe.sha256
+638b79366d78bba35ddc9d8c6008ce3e6862fcb51cbeba67e06ecac65a33312e  windows/nd300-x86_64-pc-windows-msvc-corporate.msi
+68b43e9ad60257cdfffea7a690626eb01d260da34bb2fcf315e4575c6489350f  windows/nd300-x86_64-pc-windows-msvc-corporate.msi.sha256
+7804b378ea96caa0dbb937a5127058de10938e8091d47b6d1a96cac4f61e24ac  windows/nd300-x86_64-pc-windows-msvc-setup.exe
+c4635a6cb3d8193b5bad4899a3cee052d06a86af08534dbde3c3ef6687f00dec  windows/nd300-x86_64-pc-windows-msvc-setup.exe.sha256
+733290aa08fa3b4f09385ef39560c4faea4f6e98cb41d10329ca16bcb1b76c12  windows/nd300-x86_64-pc-windows-msvc.msi
+0087ac504563686918d2534b4ad188463f2815178fc27895333d8ef30758d9aa  windows/nd300-x86_64-pc-windows-msvc.msi.sha256
+f6375fe0411132186b565eb38e3402e046fccbd786481837ef0d01bff41b73dc  windows/nd300-x86_64-pc-windows-msvc.zip
+a7fb7979fb52f221e66c8a470aa7cb7a46f5f8d78aeacd42b10ba9deb64080c8  windows/nd300-x86_64-pc-windows-msvc.zip.sha256

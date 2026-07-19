@@ -4,6 +4,24 @@ All notable changes to the `qube-reports-executables` distribution repository ar
 
 ---
 
+## [2.0.0] - 2026-07-19
+
+### Changed
+
+- Refreshed TR300 to v4.2.2, ND300 to v3.7.3, and SD300 to v2.0.2 from their qualified public GitHub Releases.
+- Replaced legacy per-architecture DMGs with each product's signed, notarized universal macOS PKG.
+- Added current Global and Corporate MSI/EXE installer channels plus portable Windows ZIPs.
+- Replaced versioned legacy artifact conventions with the stable public filenames used by each product's `releases/latest/download` channel.
+- Rewrote the offline install guide around same-channel updates and deliberate fresh-install intent.
+- Kept SD300 immediately after ND300 in the bundle, guide, and product inventory.
+
+### Verification
+
+- Every bundled artifact is checked against its public `.sha256` sidecar.
+- Each product-level `sha256.sum` covers all bundled artifacts and sidecars.
+
+---
+
 ## [1.1.0] — 2026-02-25
 
 ### Summary
