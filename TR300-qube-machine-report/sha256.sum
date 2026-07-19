@@ -1,9 +1,18 @@
-7deb0ddb045d01f5b7ad690dd24ed9cdbd710a6fa533ff219ee841efc5db2418 *source.tar.gz
-3d25f40001ee1e7f41b622f1be9ddf492ec15568572cd0335cf2e61e2f4b5910 *tr-300-aarch64-apple-darwin.tar.xz
-14f6d5d00d45fa3ccbe289b419a3cddb2dbaf39f83a95cf2813e89cdd2d30e44 *tr-300-aarch64-unknown-linux-gnu.tar.xz
-0119c4d2252f6ea7d96c3d7c9388e0bdb97585492a7c9d23f6d9484f39054a3d *tr-300-x86_64-apple-darwin.tar.xz
-1c1fd72eeb9af1352ee3af6ef72435359df3c61ed8b7107c358ec204bb021c6f *tr-300-x86_64-pc-windows-msvc.msi
-f65e6bc790cbee75c440650ad37a16e60b9d47ec4d3d2e3c24667760a5300583 *tr-300-x86_64-pc-windows-msvc.zip
-b36650012554cb3b098a57cd8a088ad1cde64537291f94e1461f63a8791802b5 *tr-300-x86_64-unknown-linux-gnu.tar.xz
-2b9b4fcabc70bcd6322cc9ea34d91d26b0bec9fddba0da46091b62979ffc788d *tr-300-x86_64-unknown-linux-musl.tar.xz
-
+c959cf0a611cee14355a1f7013885fc796ea0bf53e69d0d0783b70311ab9ac7d  linux/tr300-aarch64-unknown-linux-gnu.tar.xz
+e29eacbe46a23c7514fed028a45ac74de3ac8d9e29f086e6bbb87d0b0c1f3efe  linux/tr300-aarch64-unknown-linux-gnu.tar.xz.sha256
+897b99b664127c592a5896f65a25636fec702532216c7ec2c49627b9919df3b2  linux/tr300-x86_64-unknown-linux-gnu.tar.xz
+2e9e7781f62f7dc79b35c02c29d6fc72ec18d6768bb7fa7be2f77702c219c4a7  linux/tr300-x86_64-unknown-linux-gnu.tar.xz.sha256
+42ed0afbfe7457c6360b7332657c32333919f4de5830aaaf6fc6d13d56b9be76  linux/tr300-x86_64-unknown-linux-musl.tar.xz
+b0dfc5ab879d2f7b388c66fed897ad8ff606767b12205a032ad60dee275967f6  linux/tr300-x86_64-unknown-linux-musl.tar.xz.sha256
+717f233eedfac679a507bc9ce2b16ba195f050e289295665a8c68d83ba10c979  macos/tr300-universal-apple-darwin.pkg
+1530d1f9fd73a7d7ab84de30fe4929b3ab5ecacc0715f8c461cd0ce2c76b5aec  macos/tr300-universal-apple-darwin.pkg.sha256
+67c422b5bd064077a2a0cb16627e8cee0607d8acfa36ce043ba948e88af1eaee  windows/tr300-x86_64-pc-windows-msvc-corporate-setup.exe
+d7a4a9926e00d7e99fcc3fc78c22d101afe034f252cec0375726c66315bc31e8  windows/tr300-x86_64-pc-windows-msvc-corporate-setup.exe.sha256
+9bf4d6b7af22f9434d04c4b301b4a5b483e65b0e270fa8d16c5e1dc83c822971  windows/tr300-x86_64-pc-windows-msvc-corporate.msi
+cbed79fb551a8e2df12a8a123255ff2508338949c4164563718667e37dcd88d7  windows/tr300-x86_64-pc-windows-msvc-corporate.msi.sha256
+690db096689ba78061116cdbd0a591634c66c000d3e6dca9d7c3bb47c4acd54b  windows/tr300-x86_64-pc-windows-msvc-setup.exe
+4a5ed313b13f05ebf5e480fcd29f780142c9b38a8155a43d8723ef5b994c85c2  windows/tr300-x86_64-pc-windows-msvc-setup.exe.sha256
+93d6353dcea73cd2e17f8599acd4d6abf44f9002d38fafb83e71c0f0e947837e  windows/tr300-x86_64-pc-windows-msvc.msi
+e09ef1c4ba8cb78901fb54a3157ead2d8bea07dc92da530b182b70c6956e3584  windows/tr300-x86_64-pc-windows-msvc.msi.sha256
+363c9ff7c329985af6198c7434f746241280fb18a045770a903ded88b4837bf7  windows/tr300-x86_64-pc-windows-msvc.zip
+94373ae232aba3bef509ae9e94934c19162546d72368294f90a1cb9ebaf43582  windows/tr300-x86_64-pc-windows-msvc.zip.sha256

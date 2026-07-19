@@ -1,0 +1,7 @@
+*.sha256 binary
+sha256.sum binary
+*.pkg binary
+*.msi binary
+*.exe binary
+*.zip binary
+*.tar.xz binary
