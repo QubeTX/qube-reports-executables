@@ -1,108 +1,72 @@
-# Qube TX 300 Series Offline Installers
+# QubeTX Offline Toolkit
 
-This repository is an offline snapshot of the native installers and portable
-archives for the Qube TX 300-series CLI tools. Download the repository ZIP,
-open the product folder, and choose the file for the target platform.
+**Bundle 3.0.0 · October 11, 2026**
 
-For the normal online install, use each product's versionless managed command
-from [reports.qubetx.com](https://reports.qubetx.com). The files here are for
-offline deployment, removable media, and manual recovery.
+Download [qubetx-offline-bundle.zip](https://github.com/QubeTX/qube-reports-executables/releases/latest/download/qubetx-offline-bundle.zip), extract it, and open **index.html**. This local start page uses no external services, fonts, or JavaScript. The ZIP includes official installers, portable archives, matching documentation, licenses, and checksums.
 
-| Tool | Snapshot version | Description |
-|------|------------------|-------------|
-| **TR300** (`tr300`) | v4.2.2 | Machine reporting |
-| **ND300** (`nd300`, `speedqx`) | v3.7.3 | Network diagnostics |
-| **SD300** (`sd300`) | v2.0.2 | System diagnostics and live hardware monitoring |
+| Product | Included release | Commands and purpose |
+|---|---|---|
+| TR-300 | **4.4.0** | `tr300`, `report`: system reports and explicit JSON/Markdown export |
+| ND-300 | **4.0.1** | `nd300`, `speedqx`: network diagnostics and Methodology v5 throughput tests |
+| SD-300 | **4.1.0** | `sd300`: terminal diagnostics, snapshots, and the native desktop monitor |
 
-See [USER-INSTALL-GUIDE.md](./USER-INSTALL-GUIDE.md) for step-by-step install
-instructions.
+This is a dated snapshot, not a live mirror. WB-300 and Shaughv OS are not included. These binaries come from the exact published tags recorded in `bundle-manifest.json`; no local development build is substituted.
 
-## Folder Layout
+## What's inside
 
-Each product folder contains:
+Each product has `windows/`, `macos/`, `linux/`, `docs/`, and a product-level `sha256.sum`.
 
-- `macos/`: one signed, notarized universal `.pkg` for Apple Silicon and Intel.
-- `windows/`: Global and Corporate MSI/EXE installers plus a portable ZIP.
-- `linux/`: x86_64 GNU, x86_64 musl, and ARM64 GNU archives.
-- `sha256.sum`: checksums for every bundled artifact and sidecar.
+- **Windows x64:** Global and Corporate MSI/EXE installers plus a portable command-line ZIP. Global installs machine-wide and requires administrator approval; Corporate installs per user. SD-300 also includes a separate portable GUI ZIP.
+- **macOS:** a universal PKG for Intel and Apple Silicon, plus architecture-specific command-line archives. SD-300 also includes the universal GUI app ZIP. Legacy compatibility DMGs are intentionally omitted.
+- **Linux:** command-line archives for x64 GNU, ARM64 GNU, and x64 musl. SD-300 includes matching GUI archives with their private runtime. Use a compatible distribution and graphical desktop for the GUI; system libc, kernel, display, and driver support still come from the host.
+- **Documentation:** each product's published README, changelog, license, release notes, Markdown documents, and available man pages are stored locally. Supporting images and external links are not mirrored. The current bundle install guide is the authority for offline setup; upstream READMEs also describe online installation.
+- **Integrity:** original upstream `.sha256` sidecars accompany all 38 payloads. The manifest records immutable source URLs, release commits, sizes, and SHA-256 hashes. `SHA256SUMS.txt` covers the complete curated bundle except itself.
 
-Products appear in this order throughout the bundle:
+Product folders are `TR300-qube-machine-report`, `ND300-qube-network-diagnostics`, and `SD300-qube-system-diagnostics`.
 
-1. `TR300-qube-machine-report/`
-2. `ND300-qube-network-diagnostics/`
-3. `SD300-qube-system-diagnostics/`
+## Offline scope
 
-## Stable Artifact Names
+No package manager or Rust toolchain is needed to install the included prebuilt files. Initial download requires a connected computer; copy the extracted folder or ZIP to the destination computer.
 
-Release numbers are intentionally absent from installer and archive filenames.
-The upstream `releases/latest/download/...` URLs therefore stay stable while
-new releases replace the bytes behind the latest channel.
+Offline installation does **not** make network services work without connectivity. ND-300 can inspect available local state, but public DNS, public-IP lookups, remote routes, throughput tests, and network recovery verification require the relevant network. SpeedQX needs internet for its remote tests. Self-update and downloading replacement assets also need internet. TR-300 and SD-300 local readings remain subject to available hardware and OS permissions.
 
-### TR300 v4.2.2
+SD-300 native MSI/EXE/PKG installers contain both the CLI and desktop app. Separate portable GUI archives can be opened directly while preserving their full folder structure; they do not establish managed ownership. Terminal-only use remains available through the CLI archive.
 
-- macOS: `tr300-universal-apple-darwin.pkg`
-- Windows Global: `tr300-x86_64-pc-windows-msvc.msi` or `tr300-x86_64-pc-windows-msvc-setup.exe`
-- Windows Corporate: `tr300-x86_64-pc-windows-msvc-corporate.msi` or `tr300-x86_64-pc-windows-msvc-corporate-setup.exe`
-- Windows portable: `tr300-x86_64-pc-windows-msvc.zip`
-- Linux: `tr300-{x86_64,aarch64}-unknown-linux-*.tar.xz`
+Read [USER-INSTALL-GUIDE.md](USER-INSTALL-GUIDE.md) before upgrading an existing managed installation, particularly SD-300 3.x to 4.x.
 
-### ND300 v3.7.3
+## Verify integrity
 
-- macOS: `nd300-universal-apple-darwin.pkg`
-- Windows Global: `nd300-x86_64-pc-windows-msvc.msi` or `nd300-x86_64-pc-windows-msvc-setup.exe`
-- Windows Corporate: `nd300-x86_64-pc-windows-msvc-corporate.msi` or `nd300-x86_64-pc-windows-msvc-corporate-setup.exe`
-- Windows portable: `nd300-x86_64-pc-windows-msvc.zip`
-- Linux: `nd300-{x86_64,aarch64}-unknown-linux-*.tar.xz`
+The release ZIP has a sibling `qubetx-offline-bundle.zip.sha256` file. Verify that before extraction when possible. After extraction, run from the bundle folder:
 
-### SD300 v2.0.2
-
-- macOS: `sd300-macos-universal.pkg`
-- Windows Global: `sd300-windows-x64-global.msi` or `sd300-windows-x64-global.exe`
-- Windows Corporate: `sd300-windows-x64-corporate.msi` or `sd300-windows-x64-corporate.exe`
-- Windows portable: `tr300-tui-x86_64-pc-windows-msvc.zip`
-- Linux: `tr300-tui-{x86_64,aarch64}-unknown-linux-*.tar.xz`
-
-The `tr300-tui` archive prefix is SD300's historical crates.io package name;
-the executable inside remains `sd300`.
-
-## Install Behavior
-
-Native installations retain their owner and channel. Running `tr300 update`,
-`nd300 update`, or `sd300 update` from an MSI, EXE, or PKG installation fetches
-and runs the same channel again. A deliberate fresh official install represents
-the user's newest intent, including a reinstall or downgrade, when ownership
-and scope can be resolved safely.
-
-Use Global installers for a machine-wide deployment that can request
-administrator approval. Use Corporate installers for the per-user/no-admin
-channel. The portable ZIP and Linux archives do not create a native installer
-registration.
-
-## Verify Checksums
-
-From inside a product folder:
-
-```bash
+```sh
 # Linux
-sha256sum -c sha256.sum
-
+sha256sum -c SHA256SUMS.txt
 # macOS
-shasum -a 256 -c sha256.sum
+shasum -a 256 -c SHA256SUMS.txt
 ```
-
-On Windows PowerShell, compare a file with its sidecar:
 
 ```powershell
-(Get-FileHash .\windows\sd300-windows-x64-global.msi -Algorithm SHA256).Hash
-Get-Content .\windows\sd300-windows-x64-global.msi.sha256
+# Windows; uses only the local checksum list and local files
+.\scripts\Verify-Bundle.ps1
 ```
 
-## Sources
+If your policy prevents running scripts, compare an individual file manually:
 
-- [QubeTX/qube-machine-report](https://github.com/QubeTX/qube-machine-report)
-- [QubeTX/qube-network-diagnostics](https://github.com/QubeTX/qube-network-diagnostics)
-- [QubeTX/qube-system-diagnostics](https://github.com/QubeTX/qube-system-diagnostics)
+```powershell
+(Get-FileHash .\TR300-qube-machine-report\windows\tr300-x86_64-pc-windows-msvc.msi -Algorithm SHA256).Hash
+Get-Content .\TR300-qube-machine-report\windows\tr300-x86_64-pc-windows-msvc.msi.sha256
+```
 
-All bundled bytes are downloaded from the corresponding public GitHub Release
-and verified against its adjacent SHA-256 sidecar before this snapshot is
-published.
+Checksums detect changed bytes; they are not a substitute for trusting the source or checking the publisher. Do not bypass OS or organizational restrictions to install these tools.
+
+## Rebuilding and future refreshes
+
+See [qube-tx-build-runbook.md](qube-tx-build-runbook.md). `bundle-spec.json` is an explicit product/asset allowlist. `scripts/build_bundle.py` verifies upstream checksums and GitHub digests, validates archives, and copies documentation from the pinned release commit. `scripts/package_bundle.py` generates the local start page and a deterministic ZIP from a curated file list, excluding Git data and historical build notes.
+
+## Sources and licenses
+
+- [TR-300 v4.4.0](https://github.com/QubeTX/qube-machine-report/releases/tag/v4.4.0)
+- [ND-300 v4.0.1](https://github.com/QubeTX/qube-network-diagnostics/releases/tag/v4.0.1)
+- [SD-300 v4.1.0](https://github.com/QubeTX/qube-system-diagnostics/releases/tag/v4.1.0)
+
+Each product retains its upstream license; bundled GUI dependencies retain the notices inside their official archive. Binaries are redistributed unchanged, without re-signing or repackaging their inner installers.

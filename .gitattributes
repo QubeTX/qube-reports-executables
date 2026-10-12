@@ -1,3 +1,7 @@
+# Preserve exact published documentation bytes and reproducible checksums.
+* text=auto eol=lf
+**/docs/** -text -whitespace
+SHA256SUMS.txt -text
 *.sha256 binary
 sha256.sum binary
 *.pkg binary

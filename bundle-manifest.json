@@ -1,0 +1,661 @@
+{
+  "schema_version": 1,
+  "bundle_version": "3.0.0",
+  "snapshot_date": "2026-10-11",
+  "products": [
+    {
+      "id": "TR-300",
+      "repo": "QubeTX/qube-machine-report",
+      "folder": "TR300-qube-machine-report",
+      "tag": "v4.4.0",
+      "commit": "f49d50a256842ac6c677d1c743c553b3dd92717f",
+      "commands": [
+        "tr300",
+        "report"
+      ],
+      "release_url": "https://github.com/QubeTX/qube-machine-report/releases/tag/v4.4.0",
+      "published_at": "2026-09-25T02:41:06Z",
+      "assets": [
+        {
+          "path": "linux/tr300-aarch64-unknown-linux-gnu.tar.xz",
+          "bytes": 1640996,
+          "sha256": "848f08bd7f038919d7db7c28b43ced4ff251ede525ea4d38b38270dd8a6de998",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-aarch64-unknown-linux-gnu.tar.xz",
+          "sidecar_sha256": "e41593df9131e7f203bee97fcaa804abeaec5e8f145d5b4d1fe6f3b5bbc076d2",
+          "github_digest": "sha256:848f08bd7f038919d7db7c28b43ced4ff251ede525ea4d38b38270dd8a6de998"
+        },
+        {
+          "path": "linux/tr300-x86_64-unknown-linux-gnu.tar.xz",
+          "bytes": 1786632,
+          "sha256": "92d0b817cffb6176576674bb2f411ec54246fe183af31809b9ff8101ae330dea",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-x86_64-unknown-linux-gnu.tar.xz",
+          "sidecar_sha256": "268ff3cd19fdea425ae96adfbfb2e4e288dbbd6e360fb053c9f3859208084b41",
+          "github_digest": "sha256:92d0b817cffb6176576674bb2f411ec54246fe183af31809b9ff8101ae330dea"
+        },
+        {
+          "path": "linux/tr300-x86_64-unknown-linux-musl.tar.xz",
+          "bytes": 1880372,
+          "sha256": "323568c436709344a2a6d251034492484b70540b3c1469dbfc02cb6413b78fc0",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-x86_64-unknown-linux-musl.tar.xz",
+          "sidecar_sha256": "0e0742c7c18a779b60ceb22a93acfe7fcbda2f2e54383473267e27e5311ac519",
+          "github_digest": "sha256:323568c436709344a2a6d251034492484b70540b3c1469dbfc02cb6413b78fc0"
+        },
+        {
+          "path": "macos/tr300-aarch64-apple-darwin.tar.xz",
+          "bytes": 1503820,
+          "sha256": "c1c82f4b8664710ad23fd4a56a6b7b3fb842ed8fcc96289bd9be866d34990304",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-aarch64-apple-darwin.tar.xz",
+          "sidecar_sha256": "182f63ddf295d7d9fce8ea7f75ae3d0a0cb880ff3fc4137ec9d953859502bf38",
+          "github_digest": "sha256:c1c82f4b8664710ad23fd4a56a6b7b3fb842ed8fcc96289bd9be866d34990304"
+        },
+        {
+          "path": "macos/tr300-universal-apple-darwin.pkg",
+          "bytes": 4369374,
+          "sha256": "2381a8c798c7b5854e408b9bb78257a46ed142cf7b8f631676ed3582fa7bf795",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-universal-apple-darwin.pkg",
+          "sidecar_sha256": "d08dfb18d3f86a92d8d3babf3edd6cce784ef94c7be1730af4c22eeecbbd2793",
+          "github_digest": "sha256:2381a8c798c7b5854e408b9bb78257a46ed142cf7b8f631676ed3582fa7bf795"
+        },
+        {
+          "path": "macos/tr300-x86_64-apple-darwin.tar.xz",
+          "bytes": 1685484,
+          "sha256": "f7e3b257f9f8b9a82964894d76a407e6fa7ae586e9c9fd1ad870fec64082599a",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-x86_64-apple-darwin.tar.xz",
+          "sidecar_sha256": "5f4ab4ce68449a8aa689be6a375940fa5530ef6366f27b1ddad99337e0f27ff4",
+          "github_digest": "sha256:f7e3b257f9f8b9a82964894d76a407e6fa7ae586e9c9fd1ad870fec64082599a"
+        },
+        {
+          "path": "windows/tr300-x86_64-pc-windows-msvc-corporate-setup.exe",
+          "bytes": 3492267,
+          "sha256": "8cff0c4d98a104f7c08d22fcdc23d62a19ad7dd419d54ab54b9ab2fe5a69a2c2",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-x86_64-pc-windows-msvc-corporate-setup.exe",
+          "sidecar_sha256": "4763275a0efdeb6888f878879089c153cb3b9319bd70c15c217f13470f8c590c",
+          "github_digest": "sha256:8cff0c4d98a104f7c08d22fcdc23d62a19ad7dd419d54ab54b9ab2fe5a69a2c2"
+        },
+        {
+          "path": "windows/tr300-x86_64-pc-windows-msvc-corporate.msi",
+          "bytes": 6672384,
+          "sha256": "d09e70f3cf461c1a257a51a4403c00ee541ca4f04ccbe6ef1ee29da2bc797a17",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-x86_64-pc-windows-msvc-corporate.msi",
+          "sidecar_sha256": "136f5b63d094cd9c4d48452374871067bfdaf36a0af955f292c74eb7bfd7897f",
+          "github_digest": "sha256:d09e70f3cf461c1a257a51a4403c00ee541ca4f04ccbe6ef1ee29da2bc797a17"
+        },
+        {
+          "path": "windows/tr300-x86_64-pc-windows-msvc-setup.exe",
+          "bytes": 3492284,
+          "sha256": "5a55435d63c35c94d2052d0792174812cf2981818f7969f0cea29f1944d0f785",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-x86_64-pc-windows-msvc-setup.exe",
+          "sidecar_sha256": "f7f226d6d583cc458df93dda729da58279018098c4cf3ff82eb370acd9b5420e",
+          "github_digest": "sha256:5a55435d63c35c94d2052d0792174812cf2981818f7969f0cea29f1944d0f785"
+        },
+        {
+          "path": "windows/tr300-x86_64-pc-windows-msvc.msi",
+          "bytes": 7016448,
+          "sha256": "1ad452bfc716da093384ca15f531e2ad67ae26bd909ddb6c93c7b45763e9b20a",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-x86_64-pc-windows-msvc.msi",
+          "sidecar_sha256": "5f4d007b14887caf1e1648fd55b31c8e91e1f9e0bc3da929810aa4f3be0dc860",
+          "github_digest": "sha256:1ad452bfc716da093384ca15f531e2ad67ae26bd909ddb6c93c7b45763e9b20a"
+        },
+        {
+          "path": "windows/tr300-x86_64-pc-windows-msvc.zip",
+          "bytes": 2273843,
+          "sha256": "bf4bf4e32ad7b02776ed30f35594c2c0d13e45634eedb1d608b80e6987a98af0",
+          "source_url": "https://github.com/QubeTX/qube-machine-report/releases/download/v4.4.0/tr300-x86_64-pc-windows-msvc.zip",
+          "sidecar_sha256": "26b3c8accfe95684f9cfd262a8b443054ecb33ebe70b242df4cd3c5c31d70964",
+          "github_digest": "sha256:bf4bf4e32ad7b02776ed30f35594c2c0d13e45634eedb1d608b80e6987a98af0"
+        }
+      ],
+      "documentation": [
+        {
+          "path": "docs/upstream/CHANGELOG.md",
+          "sha256": "5dafad8f5dc97a59e1f839e24eaa825101827e80ba56cac9a96aa5635312a71b",
+          "bytes": 155496
+        },
+        {
+          "path": "docs/upstream/HUMAN_CHANGELOG.md",
+          "sha256": "45f2d210ffa410d0d9d48d59f6d50478cfa99201e67273b24dc17ce86bf99e67",
+          "bytes": 96210
+        },
+        {
+          "path": "docs/upstream/LICENSE",
+          "sha256": "cb557908a07d7f941c583173864d8061d33d58b4d4fb337c4641a398be71b8d5",
+          "bytes": 4610
+        },
+        {
+          "path": "docs/upstream/README.md",
+          "sha256": "c81588e5581944bf2994f10d9ae9ebc16d023f469bb9c640ca70eff0f7c3f796",
+          "bytes": 39939
+        },
+        {
+          "path": "docs/upstream/docs/architecture-decisions.md",
+          "sha256": "33b7b072076337c3509456eb8f706db664f786098b74dcedaf449e51af3b9fb4",
+          "bytes": 235014
+        },
+        {
+          "path": "docs/upstream/man/report.1",
+          "sha256": "8e43c0ab1fc956f380d4b7b185fb1257d30a970782577cfcba67bfe131e42024",
+          "bytes": 2187
+        },
+        {
+          "path": "docs/upstream/man/tr300.1",
+          "sha256": "8f3435ecd4684a0513ca355a2cd09423c2a82dda3d43781f7dd24881fd31bdda",
+          "bytes": 2184
+        }
+      ]
+    },
+    {
+      "id": "ND-300",
+      "repo": "QubeTX/qube-network-diagnostics",
+      "folder": "ND300-qube-network-diagnostics",
+      "tag": "v4.0.1",
+      "commit": "d76af2b2e282440e2e28c31c8b05d5d8833f458f",
+      "commands": [
+        "nd300",
+        "speedqx"
+      ],
+      "release_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/tag/v4.0.1",
+      "published_at": "2026-09-05T08:18:17Z",
+      "assets": [
+        {
+          "path": "linux/nd300-aarch64-unknown-linux-gnu.tar.xz",
+          "bytes": 3679300,
+          "sha256": "1f579931aaaa9e62862872cfadda27285cd9779bcb3f0e123d8dc7f6cc3007ed",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-aarch64-unknown-linux-gnu.tar.xz",
+          "sidecar_sha256": "ab65bcb19e7cf483c389afde54ce8d91afe9f2d4593b316c640b0f86b6ea424c",
+          "github_digest": "sha256:1f579931aaaa9e62862872cfadda27285cd9779bcb3f0e123d8dc7f6cc3007ed"
+        },
+        {
+          "path": "linux/nd300-x86_64-unknown-linux-gnu.tar.xz",
+          "bytes": 3856492,
+          "sha256": "95a082bdcf6fe27ce6540b4b55e14054133414e8a9df7b5e5c42b53c1bb067f1",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-x86_64-unknown-linux-gnu.tar.xz",
+          "sidecar_sha256": "3ac1943a195aaafede603832fef58aee06945befd1b6f99b3348f96b936fc81a",
+          "github_digest": "sha256:95a082bdcf6fe27ce6540b4b55e14054133414e8a9df7b5e5c42b53c1bb067f1"
+        },
+        {
+          "path": "linux/nd300-x86_64-unknown-linux-musl.tar.xz",
+          "bytes": 4057052,
+          "sha256": "236c0d67415db0f6982728f2263b96f68a94060dda99f96cdb6ff453ab6a8ace",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-x86_64-unknown-linux-musl.tar.xz",
+          "sidecar_sha256": "30600aa64cc15eb5053820ede909227e5d68f3d243cafa791c31af55bd708e71",
+          "github_digest": "sha256:236c0d67415db0f6982728f2263b96f68a94060dda99f96cdb6ff453ab6a8ace"
+        },
+        {
+          "path": "macos/nd300-aarch64-apple-darwin.tar.xz",
+          "bytes": 4818584,
+          "sha256": "145086fc5d8a48a740c4122daf1deadcdd240995a4d724de2c1e3d436e250374",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-aarch64-apple-darwin.tar.xz",
+          "sidecar_sha256": "96aefdaa99080eb3628eab8e24e170ba960f412b6868496ea98ed420664a36c7",
+          "github_digest": "sha256:145086fc5d8a48a740c4122daf1deadcdd240995a4d724de2c1e3d436e250374"
+        },
+        {
+          "path": "macos/nd300-universal-apple-darwin.pkg",
+          "bytes": 15526770,
+          "sha256": "1dbb66b914244a48e56014be7166c3e3c51769152b4f56dd90a4621d22efa843",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-universal-apple-darwin.pkg",
+          "sidecar_sha256": "3643040821c19b98a35452fa8a6db2691dc7b81722c250d8de7f8ef1930f309d",
+          "github_digest": "sha256:1dbb66b914244a48e56014be7166c3e3c51769152b4f56dd90a4621d22efa843"
+        },
+        {
+          "path": "macos/nd300-x86_64-apple-darwin.tar.xz",
+          "bytes": 5437312,
+          "sha256": "ec15ef716ac62220183fb33e1c61fb8067e792d1dc3447a855f9b76dbfcf75e5",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-x86_64-apple-darwin.tar.xz",
+          "sidecar_sha256": "91c694714ce6e70b0a5949d4a20f7273aaba653f4f88ed33a14559428e175054",
+          "github_digest": "sha256:ec15ef716ac62220183fb33e1c61fb8067e792d1dc3447a855f9b76dbfcf75e5"
+        },
+        {
+          "path": "windows/nd300-x86_64-pc-windows-msvc-corporate-setup.exe",
+          "bytes": 5304120,
+          "sha256": "13622b906039fb415154460b42ac99387a3f7bf40b6efbeca07f5d294f5a4649",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-x86_64-pc-windows-msvc-corporate-setup.exe",
+          "sidecar_sha256": "a2891085db25ad0e5aeb8c095c57c44a40a7dff055834b723ec9d3ff5d638c15",
+          "github_digest": "sha256:13622b906039fb415154460b42ac99387a3f7bf40b6efbeca07f5d294f5a4649"
+        },
+        {
+          "path": "windows/nd300-x86_64-pc-windows-msvc-corporate.msi",
+          "bytes": 17281024,
+          "sha256": "6a897d69f5be9d7c5661d22b565b95b497456573d7c1e9afdb724ea5990ac806",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-x86_64-pc-windows-msvc-corporate.msi",
+          "sidecar_sha256": "6f38150665eee55825556d97aacaa6011cb7fb22513090c482b35d7fc423c6f4",
+          "github_digest": "sha256:6a897d69f5be9d7c5661d22b565b95b497456573d7c1e9afdb724ea5990ac806"
+        },
+        {
+          "path": "windows/nd300-x86_64-pc-windows-msvc-setup.exe",
+          "bytes": 5304115,
+          "sha256": "c74c18f0072e0d63ac9fd7f39d1633599e894217a494f2655ab5f0608e0fc017",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-x86_64-pc-windows-msvc-setup.exe",
+          "sidecar_sha256": "8fc1415db085463e828fb43a2c682adc8b8661935b5235e549afbfbff924c7f4",
+          "github_digest": "sha256:c74c18f0072e0d63ac9fd7f39d1633599e894217a494f2655ab5f0608e0fc017"
+        },
+        {
+          "path": "windows/nd300-x86_64-pc-windows-msvc.msi",
+          "bytes": 17932288,
+          "sha256": "e4f46acd7aeaf7acc95b810579432b068af58d0d361f23f56e24f97085c90a8d",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-x86_64-pc-windows-msvc.msi",
+          "sidecar_sha256": "650dfdcea8cdf81b0e4733c3d304220555f4055c8aa07b32ac1f301bc88102e4",
+          "github_digest": "sha256:e4f46acd7aeaf7acc95b810579432b068af58d0d361f23f56e24f97085c90a8d"
+        },
+        {
+          "path": "windows/nd300-x86_64-pc-windows-msvc.zip",
+          "bytes": 7380114,
+          "sha256": "2b188f060a81687ca120444e88c4e63744d02841b2a17d18956e2c345c967603",
+          "source_url": "https://github.com/QubeTX/qube-network-diagnostics/releases/download/v4.0.1/nd300-x86_64-pc-windows-msvc.zip",
+          "sidecar_sha256": "6dceceedb606df6e95901661e5c16618c92cec32e899b6874b4f28c448d9f5d8",
+          "github_digest": "sha256:2b188f060a81687ca120444e88c4e63744d02841b2a17d18956e2c345c967603"
+        }
+      ],
+      "documentation": [
+        {
+          "path": "docs/upstream/CHANGELOG.md",
+          "sha256": "b3eda629f6ba68b92b57d9879835c765bccde5b39ca3fa92f2f1371731e4aa81",
+          "bytes": 104579
+        },
+        {
+          "path": "docs/upstream/HUMAN_CHANGELOG.md",
+          "sha256": "6a856bf85a85c81cf7c9c61ea1402496ab2d7169d06a3a446f96fc3299c9c206",
+          "bytes": 81461
+        },
+        {
+          "path": "docs/upstream/LICENSE",
+          "sha256": "cb557908a07d7f941c583173864d8061d33d58b4d4fb337c4641a398be71b8d5",
+          "bytes": 4610
+        },
+        {
+          "path": "docs/upstream/METHODOLOGY.md",
+          "sha256": "3844b18dfc167f7bad86e341eb7b425963410459d58fce1f4f18a19cd930c761",
+          "bytes": 13423
+        },
+        {
+          "path": "docs/upstream/README.md",
+          "sha256": "3e6c00d326c42de0276a74acb209f6b8b527a93ec6a2a7b57689b6cdffbd9091",
+          "bytes": 39003
+        },
+        {
+          "path": "docs/upstream/docs/METHODOLOGY-v4.md",
+          "sha256": "d62ae9d427e148be103e81daf26bdbb9b570fe4dfdb2393bb3e80b024962a19c",
+          "bytes": 14269
+        },
+        {
+          "path": "docs/upstream/docs/architecture-decisions.md",
+          "sha256": "697e05ef7bdbd32e843da774f46469369881e315ac8f855d171f9d77bc827b4e",
+          "bytes": 12889
+        },
+        {
+          "path": "docs/upstream/docs/evidence/v5/publish-delta-review.md",
+          "sha256": "c8163fb5d1f81987bb68d4c27e385f383c81f43bb0e8833928feb9b7ec2d298a",
+          "bytes": 2922
+        },
+        {
+          "path": "docs/upstream/docs/evidence/v5/security-review.md",
+          "sha256": "d2cb35ebe331d3bb122516a44016e088ffdfda6ad9374b0f9d4336e2977a7045",
+          "bytes": 8987
+        },
+        {
+          "path": "docs/upstream/docs/release-evidence-v3.6.4.md",
+          "sha256": "6d25548e83077ffc95c490518bbc499e432b6500fc7f479f285337681263dd4d",
+          "bytes": 7626
+        },
+        {
+          "path": "docs/upstream/docs/release-evidence-v3.7.3.md",
+          "sha256": "4da4dc387afbaf3b33f9baef4e5aaad0328657413c58a2443915d07ec8191e01",
+          "bytes": 9479
+        },
+        {
+          "path": "docs/upstream/man/nd300.1",
+          "sha256": "2bad4915a4d922adc9d3e6029e17d2bdbf99063b6959116b91709e7943bb9345",
+          "bytes": 4069
+        },
+        {
+          "path": "docs/upstream/man/speedqx.1",
+          "sha256": "d046a889b63f5ed4f248f3e02a17dce3d5b498f8242275c180dab9a4e90df76c",
+          "bytes": 3231
+        }
+      ]
+    },
+    {
+      "id": "SD-300",
+      "repo": "QubeTX/qube-system-diagnostics",
+      "folder": "SD300-qube-system-diagnostics",
+      "tag": "v4.1.0",
+      "commit": "1d66a461b3e499e067b6c15658b04a8cde89671d",
+      "commands": [
+        "sd300"
+      ],
+      "release_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/tag/v4.1.0",
+      "published_at": "2026-09-29T22:28:17Z",
+      "assets": [
+        {
+          "path": "linux/sd300-gui-linux-gnu-arm64.tar.xz",
+          "bytes": 9928968,
+          "sha256": "a955850c8ec7cd3aea953fad2e1520c371317a32d6cd1176aa9caa21181ed67c",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-gui-linux-gnu-arm64.tar.xz",
+          "sidecar_sha256": "14454ca494e1c471d8b4cf31da57771db3d7de9fc63147ab885ea3110325d6ad",
+          "github_digest": "sha256:a955850c8ec7cd3aea953fad2e1520c371317a32d6cd1176aa9caa21181ed67c"
+        },
+        {
+          "path": "linux/sd300-gui-linux-gnu-x86_64.tar.xz",
+          "bytes": 10916072,
+          "sha256": "049ed21c79847fd1d63bdfd8d60979568b8c617b021021aaf68c44cf28390925",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-gui-linux-gnu-x86_64.tar.xz",
+          "sidecar_sha256": "0503041812b58156631e090248fc04056cf91a1579e47b4343c2c48d9770796d",
+          "github_digest": "sha256:049ed21c79847fd1d63bdfd8d60979568b8c617b021021aaf68c44cf28390925"
+        },
+        {
+          "path": "linux/sd300-gui-linux-musl-x86_64.tar.xz",
+          "bytes": 11049640,
+          "sha256": "2105fbd4090334200d355c3a8eea6efba5716704b7bf65792383cbd53da3f556",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-gui-linux-musl-x86_64.tar.xz",
+          "sidecar_sha256": "69cc0ab3618b16076c442dec6d8c7e80c69f12d9766f2eb9b04d2dae2cb147ca",
+          "github_digest": "sha256:2105fbd4090334200d355c3a8eea6efba5716704b7bf65792383cbd53da3f556"
+        },
+        {
+          "path": "linux/tr300-tui-aarch64-unknown-linux-gnu.tar.xz",
+          "bytes": 1484068,
+          "sha256": "643fd528007952997eb6431e74160238f49c795fc2e25b5cd753ea37f146307e",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/tr300-tui-aarch64-unknown-linux-gnu.tar.xz",
+          "sidecar_sha256": "d3f54295f8b16d164685065afcf2598f55279d4a3da757fdef267caa347e4e6c",
+          "github_digest": "sha256:643fd528007952997eb6431e74160238f49c795fc2e25b5cd753ea37f146307e"
+        },
+        {
+          "path": "linux/tr300-tui-x86_64-unknown-linux-gnu.tar.xz",
+          "bytes": 1641276,
+          "sha256": "af3d46105944a2b0119331904cb80aeaa73c73ab5819033cdda4e4350640e9d5",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/tr300-tui-x86_64-unknown-linux-gnu.tar.xz",
+          "sidecar_sha256": "de80a3d67c0a12f7ee04f0f4b4d5aee9acb288783b5d788c59046903fddd49a0",
+          "github_digest": "sha256:af3d46105944a2b0119331904cb80aeaa73c73ab5819033cdda4e4350640e9d5"
+        },
+        {
+          "path": "linux/tr300-tui-x86_64-unknown-linux-musl.tar.xz",
+          "bytes": 1728360,
+          "sha256": "6fea48c395270e54091283feeaa4b96c5edd84c44f32bd79708b237b3728c283",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/tr300-tui-x86_64-unknown-linux-musl.tar.xz",
+          "sidecar_sha256": "4ead4b8d386d95c89c435ac2b6560cd2f550a59a6e1b151ce50c18c862eab3d6",
+          "github_digest": "sha256:6fea48c395270e54091283feeaa4b96c5edd84c44f32bd79708b237b3728c283"
+        },
+        {
+          "path": "macos/sd300-gui-macos-universal.zip",
+          "bytes": 9266238,
+          "sha256": "f15fb08dafee3c8dd34abf6ea153a78a2865d8a7c6ac2bac51b05128aa28741c",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-gui-macos-universal.zip",
+          "sidecar_sha256": "bf39da5aef234e7ee571f4463e54f0715589747c95a606abdb8c55ea690b9c82",
+          "github_digest": "sha256:f15fb08dafee3c8dd34abf6ea153a78a2865d8a7c6ac2bac51b05128aa28741c"
+        },
+        {
+          "path": "macos/sd300-macos-universal.pkg",
+          "bytes": 17599500,
+          "sha256": "4f68dd7de28a7c3dfc8119bad265b936e52532247f227e5b4a2d7186d5134e31",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-macos-universal.pkg",
+          "sidecar_sha256": "59049d486d03b6d8a96445d3bf34c4499d5397714b826c18b245161bbe5c34e4",
+          "github_digest": "sha256:4f68dd7de28a7c3dfc8119bad265b936e52532247f227e5b4a2d7186d5134e31"
+        },
+        {
+          "path": "macos/tr300-tui-aarch64-apple-darwin.tar.xz",
+          "bytes": 1406672,
+          "sha256": "a487ab95fb9fa590f2bc646bb61c0881df8f8138008a4014f7e8ed0af5ed3039",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/tr300-tui-aarch64-apple-darwin.tar.xz",
+          "sidecar_sha256": "0cde3a1e1e5b4988b48c74ed1a9d1f8f02c7a9693b817e91060eb7f0957db7d7",
+          "github_digest": "sha256:a487ab95fb9fa590f2bc646bb61c0881df8f8138008a4014f7e8ed0af5ed3039"
+        },
+        {
+          "path": "macos/tr300-tui-x86_64-apple-darwin.tar.xz",
+          "bytes": 1565380,
+          "sha256": "aa3fa977cb28ea2205250bf4bcd39cef182c36ae105f0a4f9c412c637f8de5b3",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/tr300-tui-x86_64-apple-darwin.tar.xz",
+          "sidecar_sha256": "a8cfe9e9d2e2cef0df6560654f62880fc66c2421103241f320cd0febfe1d99da",
+          "github_digest": "sha256:aa3fa977cb28ea2205250bf4bcd39cef182c36ae105f0a4f9c412c637f8de5b3"
+        },
+        {
+          "path": "windows/sd300-gui-windows-x86_64.zip",
+          "bytes": 3491307,
+          "sha256": "2c0abdd7bde2ed31fcaadd425633024fcc20f68addc5ad62fe04574dcfade82d",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-gui-windows-x86_64.zip",
+          "sidecar_sha256": "522e9ed9422947f5ab28c3adfe95c7263c7aab4f24fa5b33a3d7210328d7e9fe",
+          "github_digest": "sha256:2c0abdd7bde2ed31fcaadd425633024fcc20f68addc5ad62fe04574dcfade82d"
+        },
+        {
+          "path": "windows/sd300-windows-x64-corporate.exe",
+          "bytes": 5893242,
+          "sha256": "e923fd3567b83372528d3d3c31d0c53a74a4349684fc454aa5df3d7a214bf9cd",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-windows-x64-corporate.exe",
+          "sidecar_sha256": "d51c16713e8fd0d410daddb6d11f393160fca783a6eddbe905f3f38b9733b1d6",
+          "github_digest": "sha256:e923fd3567b83372528d3d3c31d0c53a74a4349684fc454aa5df3d7a214bf9cd"
+        },
+        {
+          "path": "windows/sd300-windows-x64-corporate.msi",
+          "bytes": 5951488,
+          "sha256": "84d99da74f4fab734a7c39b7ad7bc75f34b692adff4b209f2aadc4c4bef14fe9",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-windows-x64-corporate.msi",
+          "sidecar_sha256": "601dfe3e84e74cd952c604b34def0ad1573ba14f6bd0abf864041c62c1481724",
+          "github_digest": "sha256:84d99da74f4fab734a7c39b7ad7bc75f34b692adff4b209f2aadc4c4bef14fe9"
+        },
+        {
+          "path": "windows/sd300-windows-x64-global.exe",
+          "bytes": 5893287,
+          "sha256": "abdd939b9839c75b2df74052ac5fc9fd5fbd2770aef349c731b7bc2b750a053f",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-windows-x64-global.exe",
+          "sidecar_sha256": "24228f7cf2d388a7ba5dc04646c68e7e4ea9c2a36cbe26c91aa80cd3984d93ba",
+          "github_digest": "sha256:abdd939b9839c75b2df74052ac5fc9fd5fbd2770aef349c731b7bc2b750a053f"
+        },
+        {
+          "path": "windows/sd300-windows-x64-global.msi",
+          "bytes": 5951488,
+          "sha256": "9fadf9d3c5fd94f1868acea7330efb50ba5aee3d0edc41a6da02f1b62828fa40",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/sd300-windows-x64-global.msi",
+          "sidecar_sha256": "2a3400e7b6ac86a552da965b6aad80fe9d75129407810ec74240d529ee97e252",
+          "github_digest": "sha256:9fadf9d3c5fd94f1868acea7330efb50ba5aee3d0edc41a6da02f1b62828fa40"
+        },
+        {
+          "path": "windows/tr300-tui-x86_64-pc-windows-msvc.zip",
+          "bytes": 2261968,
+          "sha256": "d932356627d76d2822a924c3d8e8baa6751133d08a3da81639210abf994cd348",
+          "source_url": "https://github.com/QubeTX/qube-system-diagnostics/releases/download/v4.1.0/tr300-tui-x86_64-pc-windows-msvc.zip",
+          "sidecar_sha256": "6af305301256c5fb48c18326f6d69b8fb0fcde6e77abdb8dac055ad96d2e6cb6",
+          "github_digest": "sha256:d932356627d76d2822a924c3d8e8baa6751133d08a3da81639210abf994cd348"
+        }
+      ],
+      "documentation": [
+        {
+          "path": "docs/upstream/CHANGELOG.md",
+          "sha256": "4e0cd9183dcfa6abeb916a57f3ba0f522503c9b564258fc18a3fe7141e67fc63",
+          "bytes": 99103
+        },
+        {
+          "path": "docs/upstream/HUMAN_CHANGELOG.md",
+          "sha256": "782d79d5001b63f98ff42a77bf3232cfd619f9c19f443e8a6f1ebcb412a9b11e",
+          "bytes": 66187
+        },
+        {
+          "path": "docs/upstream/LICENSE.md",
+          "sha256": "51f5e50e5f8a68440a419a0ccd0532540a5592c0858f26a01387909ce0ade1b9",
+          "bytes": 4537
+        },
+        {
+          "path": "docs/upstream/README.md",
+          "sha256": "095878e5e53a1362104156062d55d186103e9b3ccc5d33cdadf306174d63c859",
+          "bytes": 24887
+        },
+        {
+          "path": "docs/upstream/docs/adr/0001-soak-early-exit-attribution.md",
+          "sha256": "071264885c267fdb3edc7f119a6acc0edce6324843add5fb9f5cb768878e9eb3",
+          "bytes": 3134
+        },
+        {
+          "path": "docs/upstream/docs/adr/0002-warmed-scroll-latency-root-cause.md",
+          "sha256": "4016a05d007d856d086cc0bbee4471211f66a2d486e23ee2945e259a9734038c",
+          "bytes": 4132
+        },
+        {
+          "path": "docs/upstream/docs/adr/0003-managed-uninstall-receipt-parent-cleanup.md",
+          "sha256": "35b08bfea28ac1a0ee69574723566ead7025a7b10d5073757b2116f2454a535c",
+          "bytes": 5505
+        },
+        {
+          "path": "docs/upstream/docs/adr/0004-v3-release-scope-decisions.md",
+          "sha256": "54b98f25ece55291bf04129df98bc7acb7538ac91c6d9de16b44dbf7be97112c",
+          "bytes": 3343
+        },
+        {
+          "path": "docs/upstream/docs/adr/0005-in-app-update-coordinator.md",
+          "sha256": "906ad27c21ea89f8f9b919e1383a601d44570691f33a89b620900d380f1593a3",
+          "bytes": 6265
+        },
+        {
+          "path": "docs/upstream/docs/adr/0006-v4-sampling-and-terminal-contract.md",
+          "sha256": "82f64e30a32083450d7e143c9b1d6d87be2ad4e6ddb9e7dcb77ef86f8c6f7b65",
+          "bytes": 3787
+        },
+        {
+          "path": "docs/upstream/docs/adr/0007-adaptive-presentation-and-time-buckets.md",
+          "sha256": "3f3a50c8582f7644795b2ed261ba3ece766ed8c485d565729b4d0a41f78cb8c3",
+          "bytes": 3758
+        },
+        {
+          "path": "docs/upstream/docs/adr/0008-reusable-isolated-providers.md",
+          "sha256": "545ef6c034d7cfe704c927ca224c656948bc5f1f601dc5ad34c7c16f502d0b71",
+          "bytes": 6292
+        },
+        {
+          "path": "docs/upstream/docs/adr/0009-optional-network-companion.md",
+          "sha256": "10756af798fc0917fdcd681f1a779124a5837703c2de668fe13182451a3bb9d9",
+          "bytes": 4893
+        },
+        {
+          "path": "docs/upstream/docs/adr/0010-bounded-privileged-storage-reads.md",
+          "sha256": "3cdbc9f0f8764c8822715d50f10f7cf2392f439959096265fb467e9d487413d1",
+          "bytes": 4732
+        },
+        {
+          "path": "docs/upstream/docs/adr/0011-solid-panel-rendering.md",
+          "sha256": "7bcf142274f4dbc11b6112bee68c520dd62cb90bc958d831f1ec31fc65f74b09",
+          "bytes": 3615
+        },
+        {
+          "path": "docs/upstream/docs/adr/0012-linux-software-presentation.md",
+          "sha256": "fe4a318f0791c843c8af6698860b0d72cad1e1a2554707674316c9652475c591",
+          "bytes": 2819
+        },
+        {
+          "path": "docs/upstream/docs/adr/0013-gui-monitoring-hierarchy.md",
+          "sha256": "49ba170be872a8f159965a5260e114a332cf9b89ebfed2f5823eedb71635323e",
+          "bytes": 3258
+        },
+        {
+          "path": "docs/upstream/docs/adr/0014-macos-termination-cleanup.md",
+          "sha256": "aef9dc0e9429e170ec587fd7ec204ebde5885db90a250250096946dc7265d243",
+          "bytes": 2359
+        },
+        {
+          "path": "docs/upstream/docs/adr/0015-gui-preference-writes-and-interaction-timing.md",
+          "sha256": "7fcdb58437a4053d03fd7c06a64351085d2fc04d8a28cb82bb451e78402a5236",
+          "bytes": 2847
+        },
+        {
+          "path": "docs/upstream/docs/adr/0016-v4-responsiveness-release-decision.md",
+          "sha256": "b6b0001c97d1ede5bb43f0855f6054106ff7abf9f5d0cb61e428305d53d9c145",
+          "bytes": 2568
+        },
+        {
+          "path": "docs/upstream/docs/adr/0017-v4-resource-release-decision.md",
+          "sha256": "da45882db0a4d72eda74f6c38911849f4944375f5406cdc3595d1cd077b6c71a",
+          "bytes": 2103
+        },
+        {
+          "path": "docs/upstream/docs/adr/0018-updater-recovery-and-corrective-release.md",
+          "sha256": "1ca556373f864904aebc5e6f44d974cb976b02ae5c78a53e882a5a95b4f7f968",
+          "bytes": 5973
+        },
+        {
+          "path": "docs/upstream/docs/adr/0019-exact-candidate-ci-publication-barrier.md",
+          "sha256": "e29f71af6da376441c2e06c0ca0efe93e15964a6998ca0a8da90b6326629a14f",
+          "bytes": 2599
+        },
+        {
+          "path": "docs/upstream/docs/adr/0020-accept-published-intel-refresh.md",
+          "sha256": "3a83b45f41c7e50e1e5eeee72632fa17c313052e4eecccd775cc8013b01e755f",
+          "bytes": 1826
+        },
+        {
+          "path": "docs/upstream/docs/adr/0021-eula-only-release-performance-exception.md",
+          "sha256": "78f85fe723bd914de93fd168254f36057829f5fb9e1b15e8cd69db0dba482e25",
+          "bytes": 2259
+        },
+        {
+          "path": "docs/upstream/docs/adr/0022-gui-resource-overview.md",
+          "sha256": "f287845921f48677344631ddcc5d2bba0b63ec662e609163d79e7dacb4e96547",
+          "bytes": 1631
+        },
+        {
+          "path": "docs/upstream/docs/adr/0023-accept-overview-windows-cpu-sample.md",
+          "sha256": "e54d24488fbcf5fda24b4334ebd6866c5a2b85ddd96782098ccaa312c44a5dbf",
+          "bytes": 1202
+        },
+        {
+          "path": "docs/upstream/docs/adr/0024-bounded-native-text-width-reuse.md",
+          "sha256": "35a605f545482643e3d7aafcd21cfe41eaa1459b2d4865d448507b5cd655d2fd",
+          "bytes": 2165
+        },
+        {
+          "path": "docs/upstream/docs/adr/0025-overview-release-acceptance.md",
+          "sha256": "699b39f8268051e8884df3720ab66e6d7bfdb54af76adbdea9ee067ff4a91b51",
+          "bytes": 3007
+        },
+        {
+          "path": "docs/upstream/docs/adr/README.md",
+          "sha256": "257838d46d9229a4d8e3bcf5ddc222e220196a43af6d4de414db66f5518b73b1",
+          "bytes": 4024
+        },
+        {
+          "path": "docs/upstream/docs/monitoring-methodology.md",
+          "sha256": "5c9e3a52d395a390bd9b6b7775e1c3510d4f3f493bb72d66f1914686cb4fe355",
+          "bytes": 12919
+        },
+        {
+          "path": "docs/upstream/docs/next-version-targets.md",
+          "sha256": "8d0f4cee78c2cde942e6d03eeea73098085d3999ff01ebaed194f315c8b3e30e",
+          "bytes": 6761
+        },
+        {
+          "path": "docs/upstream/docs/qualification/overview-4.1.0.md",
+          "sha256": "13844e10ab852d9711c9323c3a39c2ae69eb28d6b347a6c896155df1c9e2b7f4",
+          "bytes": 13805
+        },
+        {
+          "path": "docs/upstream/docs/qualification/v4/README.md",
+          "sha256": "fb2b2184102bdf8c1e565d9fa7469f62a68d6c5e98ff974a75f8b6d00d5a85fe",
+          "bytes": 32213
+        },
+        {
+          "path": "docs/upstream/docs/qualification/v4/eula-4.0.2.md",
+          "sha256": "b5c99d97d559797b8bf67e5650f374dbdeac6265dcc30e4c29d73330c10a33cb",
+          "bytes": 3153
+        },
+        {
+          "path": "docs/upstream/docs/qualification/v4/gui-ux-review.md",
+          "sha256": "62c771f792eedca5c373a711cef325659b8428f04b1cab009a1db16af302b7ee",
+          "bytes": 10910
+        },
+        {
+          "path": "docs/upstream/docs/qualification/v4/latency-4.0.1.md",
+          "sha256": "0ba0b4b129e5919c4bdfafcafc32476977a628bb8c2df299c09cea56b667e4a6",
+          "bytes": 10143
+        },
+        {
+          "path": "docs/upstream/docs/qualification/v4/post-release-ci-403.md",
+          "sha256": "fd66cbc86a99643995be0427f5336f4c8431298ce8ae075b1b5359cbf8a58492",
+          "bytes": 2910
+        },
+        {
+          "path": "docs/upstream/docs/qualification/v4/public-verification.md",
+          "sha256": "9bff3a55a9e5a458058477c4bf8d7d6753df9e007fe99959ee27911e64c807a3",
+          "bytes": 5548
+        },
+        {
+          "path": "docs/upstream/docs/qualification/v4/updater-4.0.1.md",
+          "sha256": "36c2b2d8d313e0903e34d2f0ffb66d67a025e8296b004cdaf3c434cec91a1d4c",
+          "bytes": 17239
+        }
+      ]
+    }
+  ]
+}

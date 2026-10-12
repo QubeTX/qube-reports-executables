@@ -1,0 +1,3627 @@
+# TR-300 Architecture Decisions
+
+> Long-form rationale for the load-bearing technical choices in TR-300.
+> Day-to-day editing rules live in [`../CLAUDE.md`](../CLAUDE.md); this file
+> exists for the **why** — when a contributor is about to undo a decision and
+> needs the original reasoning, the rejected alternatives, and the failure mode
+> the current code prevents.
+>
+> Each section is dated by the version that introduced (or substantially
+> revised) the decision. Verbatim moves from CLAUDE.md preserved word-for-word
+> so `git blame` history continues to make sense.
+>
+> **Coverage reconciled through 2026-08-25.** This is the repository's
+> canonical ADR ledger: one document organized by decision family rather than
+> one file per decision. v4.3.12 is the current complete crates.io and GitHub
+> distribution at exact source/tag
+> `19246b76f39c53340e6be62a332cedca9bca766c`; the immutable v4.3.0 through
+> v4.3.11 tags remain published history and were not moved or reused.
+> PR #14 exact head passed local, hosted, security, review, and benchmark gates,
+> merged as `2f997d2`, and passed exact-main CI. Accepted decisions remain binding
+> until a later dated section explicitly supersedes them. Historical failure
+> evidence is retained because it explains why the guardrails exist.
+
+## Table of contents
+
+- [Decision ledger status (v4.3.12 complete distribution)](#decision-ledger-status-v4312-complete-distribution)
+- [Origin-preserving updates and native macOS package distribution (v4.1.0; v4.2.x addenda)](#origin-preserving-updates-and-native-macos-package-distribution-v410-v42x-addenda)
+  - [Managed Installation Contract MIC-1](#managed-installation-contract-mic-1)
+  - [v4.2.2 release closure and evidence boundary](#v422-release-closure-and-evidence-boundary)
+  - [Latest discovery, immutable installation](#latest-discovery-immutable-installation)
+  - [Install channel is product state](#install-channel-is-product-state)
+  - [Fresh installer intent and legacy consolidation](#fresh-installer-intent-and-legacy-consolidation)
+  - [Direct PKG distribution and the legacy DMG bridge (v4.2.0)](#direct-pkg-distribution-and-the-legacy-dmg-bridge-v420)
+  - [Apple credentials and hosted-native proof](#apple-credentials-and-hosted-native-proof)
+  - [Hosted packaging lifecycle and tool syntax (v4.1.1 addendum)](#hosted-packaging-lifecycle-and-tool-syntax-v411-addendum)
+  - [Supported macOS ownership proof (v4.1.2 addendum)](#supported-macos-ownership-proof-v412-addendum)
+  - [Windows transition runner correctness (v4.1.2 addendum)](#windows-transition-runner-correctness-v412-addendum)
+  - [Elevated Global Windows live-image transaction (v4.1.3 addendum)](#elevated-global-windows-live-image-transaction-v413-addendum)
+  - [Authenticated and diagnosable hosted updater probes (v4.1.3 closure)](#authenticated-and-diagnosable-hosted-updater-probes-v413-closure)
+  - [Machine-readable and failure contract](#machine-readable-and-failure-contract)
+  - [Reusable contract for other CLI products](#reusable-contract-for-other-cli-products)
+- [Cross-platform report semantics (v4.0.0)](#cross-platform-report-semantics-v400)
+  - [One Rust product, platform adapters, and two collection budgets](#one-rust-product-platform-adapters-and-two-collection-budgets)
+  - [Stable table, JSON, locale, and privacy contracts](#stable-table-json-locale-and-privacy-contracts)
+  - [Why this is v4.0.0 rather than v3.18.0](#why-this-is-v400-rather-than-v3180)
+  - [Evidence-backed optional values](#evidence-backed-optional-values)
+  - [One native macOS snapshot, including Rosetta](#one-native-macos-snapshot-including-rosetta)
+  - [Disk and memory value definitions](#disk-and-memory-value-definitions)
+  - [Bounded subprocess, save, JSON, and update primitives](#bounded-subprocess-save-json-and-update-primitives)
+  - [Why report persistence is explicit-only](#why-report-persistence-is-explicit-only)
+  - [Why endpoint-policy update blocks stop the strategy chain](#why-endpoint-policy-update-blocks-stop-the-strategy-chain)
+  - [Recovered gates must block](#recovered-gates-must-block)
+  - [Enforced Developer ID signing and Apple notarization](#enforced-developer-id-signing-and-apple-notarization)
+  - [Post-release personal-hardware evidence boundary](#post-release-personal-hardware-evidence-boundary)
+- [Toolchain & release](#toolchain--release)
+  - [Default branch is `main` (2026-07-17)](#default-branch-is-main-2026-07-17)
+  - [Stable-only release chain and privileged supplemental provenance (v4.3 candidate)](#stable-only-release-chain-and-privileged-supplemental-provenance-v43-candidate)
+  - [Privileged package launch and rollback boundaries (v4.3 candidate)](#privileged-package-launch-and-rollback-boundaries-v43-candidate)
+  - [MSRV policy (v3.11.1+, addendum v3.13.1)](#msrv-policy-v3111-addendum-v3131)
+  - [Self-update auto-rustup (v3.11.1+)](#self-update-auto-rustup-v3111)
+  - [Intel macOS coverage policy (v3.11.2+)](#intel-macos-coverage-policy-v3112)
+- [Windows accuracy patterns](#windows-accuracy-patterns)
+  - [v3.11.0+ — registry OS, IsWow64Process2, WTS last-login, CPUID hypervisor, BitLocker](#v3110--registry-os-iswow64process2-wts-last-login-cpuid-hypervisor-bitlocker)
+  - [v3.12.0+ — VPN-aware default-route, Fast Startup uptime annotation](#v3120--vpn-aware-default-route-fast-startup-uptime-annotation)
+  - [v3.13.0+ — 5-state battery, native cores, GPU registry-prefer, PSCore detection, terminal walk](#v3130--5-state-battery-native-cores-gpu-registry-prefer-pscore-detection-terminal-walk)
+  - [v4.1.0 — Native Windows hybrid-core topology](#v410--native-windows-hybrid-core-topology)
+  - [v3.14.4+ — Windows install execution-policy preflight](#v3144--windows-install-execution-policy-preflight)
+  - [v3.14.5+ — Windows install error advisor](#v3145--windows-install-error-advisor)
+  - [Windows distribution model (v3.15.0+)](#windows-distribution-model-v3150)
+    - [v3.17.0 addendum — advisory one-install consolidation](#v3170-addendum--advisory-one-install-consolidation)
+  - [v3.15.1 addendum — Why corporate.wxs lives in `wix-corporate/`, not `wix/`](#v3151-addendum--why-corporatewxs-lives-in-wix-corporate-not-wix)
+- [Install / update safety primitives (v3.15.2+)](#install--update-safety-primitives-v3152)
+  - [Atomic rc-file writes](#atomic-rc-file-writes)
+  - [Marker-balance pre-check](#marker-balance-pre-check)
+  - [SHA256 verification of downloaded installers](#sha256-verification-of-downloaded-installers)
+  - [Post-install version verification](#post-install-version-verification)
+  - [WMI hard-timeout pattern](#wmi-hard-timeout-pattern)
+  - [Windows self-EXE delete via detached cleanup](#windows-self-exe-delete-via-detached-cleanup)
+- [Thermal reporting, battery hardening, and bounded concurrent probes (v4.3.0 product; v4.3.12 distribution)](#thermal-reporting-battery-hardening-and-bounded-concurrent-probes-v430-product-v4312-distribution)
+- [PATH-level report companion and lifecycle ownership (v4.4.0)](#path-level-report-companion-and-lifecycle-ownership-v440)
+
+---
+
+## Decision ledger status (v4.3.12 complete distribution)
+
+This reconciliation compared the ledger against current source, all release
+and validation workflows, the v4 thinking record, both Mac/Alienware handoffs,
+the testing ledger, technical and human changelogs, agent guides, and the public
+v4.2.2 release state and the split v4.3 state. Product bytes are published on
+crates.io through v4.3.11 via exact-main trusted OIDC, but Releases
+`32795846831`, `32800944635`, `32810420213`, `32815338720`, `32821575317`,
+`32824925889`, `32831292249`, `32835470143`, `32842969776`, and
+`32849508590`, and `32855768841` each failed before complete publication. The
+first five stopped
+before draft creation on independent Windows-bootstrap, Apple system-Bash,
+raw-checksum, raw-tar-mode, and release-manifest-filter defects. v4.3.5 created
+the correct private 24-asset draft, then its by-tag verification failed because
+GitHub returns 404 for drafts. v4.3.6 created its exact private 24-asset draft,
+then its managed-installer checksum lookup expected a binary-mode filename
+marker that default `sha256sum` does not write. v4.3.7 created exact private
+24-asset draft `376309349`, but both automatic downstream source resolvers used
+read-only tokens without push access; GitHub omitted private drafts from their
+authenticated release collections, so they deterministically saw zero matches
+and stopped before any downstream build/publication. v4.3.8 repaired that
+visibility boundary and created exact private 24-asset draft `376357745`, but
+its macOS consumer rejected the trusted freezer's six-file Apple/source
+inventory against a stale four-file contract, while its Windows build lacked
+`GH_TOKEN` for pinned Inno Setup attestation verification. Both publishers
+skipped and nothing became public. v4.3.9 then reached an exact private
+30-asset draft before the Mac ordering and private-worker test defects recorded
+in `TESTING.md`. v4.3.10 repaired those defects and reached exact private
+30-asset draft `376446284`; its Mac artifacts signed/notarized successfully,
+then both native jobs stopped on an incorrect PackageKit message assertion.
+Nothing became public. v4.3.11 then reached exact private 30-asset draft
+`376514152`; its signed/notarized Mac packages passed the real managed-install
+rejection, then fixture cleanup failed because unprivileged `rmdir` could not
+unlink a child from root-owned `/Users`. All twelve tags remain immutable.
+v4.3.12 then passed exact-main CI, trusted-OIDC crate publication, native
+preflight, the private 24-to-30-to-validated-to-34 chain, native Intel/Apple
+Silicon package lifecycles, post-public validation, and the public-byte audit
+at exact source/tag `19246b76f39c53340e6be62a332cedca9bca766c`.
+
+| Decision family | Status | Enforcement / source of truth |
+|---|---|---|
+| One Rust CLI/library with cfg-gated platform adapters | Accepted | `src/collectors/`, `src/install/`, shared `SystemInfo`, report, and JSON paths |
+| Full versus fast collection budgets | Accepted | `CollectMode`; fast may omit slow optional evidence but cannot redefine values |
+| Evidence-backed nullable facts and named value definitions | Accepted | collectors, schema-v1 JSON, table/Markdown renderers, tests |
+| v4.3 Linux thermals/battery, Windows NVIDIA GPU thermal, and bounded-probe behavior | Published completely through v4.3.12; physical Linux/Pi proof remains open | source/tests, this ADR section, `TESTING.md` |
+| Fixed-width terminal and additive JSON compatibility | Accepted | `unicode-width`, typed `serde_json`, locale/code-page setup before rendering |
+| Read-only ordinary reports; explicit-only Markdown persistence | Accepted | four save aliases; hidden `--no-save` compatibility no-op |
+| Bounded optional probes and fail-safe endpoint-policy updates | Accepted | command helper, randomized staging, `PolicyBlocked`, no force/direct overwrite |
+| Developer ID plus Apple `Accepted` before Mac artifact upload | Accepted and release-blocking | signing script and protected cargo-dist workflow step |
+| Frozen Mac surface during personal Windows/Linux/Pi continuation | Superseded for the v4.3 campaign; every Mac/shared change reopens native Intel/ARM qualification | agent guides, current handoff, release workflow, hardware task boundary |
+| Personal hardware evidence | Alienware report/hardware and v4.1.3 same-channel evidence complete; natural v4.2.2 UAC update, AMD64 laptop, and Pi 4 still open | `#win`, `#w422`, `#amd`, `#pi4`, `TESTING.md`; hosted jobs do not impersonate physical machines |
+| GitHub default branch `main` and checkout v6/Node 24 | Accepted and hosted-verified | GitHub default metadata, workflow filters/actions, exact-SHA CI/crates runs |
+| Two-place Rust 1.95 pin and tag-gated cargo-dist publication | Accepted | `Cargo.toml`, `rust-toolchain.toml`, release skill/workflows |
+| Stable-only tags plus exact supplemental release provenance | Accepted and release-blocking; v4.3.12 completed the exact tagged 24-to-30-to-validated-to-34 proof | release resolver fixtures, read-only workflow defaults, commit-bound Release target |
+| Privileged Windows Installer launches use the OS-owned absolute executable | Accepted and release-blocking | native system-directory resolution, pinned working directory, hostile-search-path fixtures |
+| Direct macOS PKG rejects standard managed ownership before payload installation | Accepted and release-blocking; v4.3.12 passed pre-tag fixtures plus signed/notarized tagged Intel/ARM lifecycles | preinstall-only package, `/Users` plus local Directory Service custom-home refusal fixtures, Intel/ARM package jobs |
+| Windows native-first facts and four-installer model | Accepted | Windows collector, update origin marker, WiX/Inno sources and supplemental workflow |
+| Origin-preserving updates with no cross-channel fallback | Accepted and release-blocking | `src/update.rs`, installer receipts/markers, isolated update fixtures |
+| Native universal macOS direct PKG plus v4.1.x DMG bridge | Accepted and release-blocking | `macos-installer.yml`, signing script, native ARM/Intel direct install and legacy-update gates |
+| Hosted package inputs survive source checkout; builder and validation tool syntax stay identical | Accepted and release-blocking | checkout-before-download ordering plus Xcode 16.4 `lipo <file> -verify_arch ...` checks |
+| Hosted updater probes authenticate and expose captured JSON/exit evidence | Accepted | read-only Actions token plus explicit `errexit` boundary in native Mac validation |
+| macOS installed-package ownership uses supported receipt, file-owner, and Developer ID checks | Accepted and release-blocking | `pkgutil --pkg-info/--files/--file-info`, strict `codesign`, native ARM/Intel install gates |
+| Explicit fresh-installer choice supersedes the prior channel where the platform owns a safe transaction | Accepted and release-blocking | Windows strict convergence and managed-wrapper rollback; direct macOS PKG refuses managed conflicts before payload |
+| Global Program Files updates use one-UAC elevated live-image handoff | Accepted and release-blocking | strict hidden worker, `ShellExecuteExW` process wait, rollback/cleanup, Windows transition matrix |
+| Physical Mac requirement | Superseded; optional visual smoke only | GitHub `macos-15` and `macos-15-intel` are the required native gates |
+
+The following earlier states are **superseded**, not alternative supported
+modes: automatic report saving, `master` as the default branch, non-blocking
+Mac/audit CI gates, ad-hoc-signed public Mac binaries, unsigned Mac release
+fallbacks, path-only Windows installer inference, the v3.17 cargo-first updater
+chain, Intel-as-release-only coverage, the claim that a physical Mac is needed
+for release proof, the claim that a bare CLI must not have a PKG, and any
+force/direct-running-binary updater bypass. Historical sections retain them
+only as failure context.
+
+---
+
+## Origin-preserving updates and native macOS package distribution (v4.1.0; v4.2.x addenda)
+
+**Status:** Accepted. This section supersedes the older updater fallback,
+Intel-runner, bare-binary packaging, and same-edition coexistence decisions
+where they conflict. The governing user intent is: an update preserves the
+channel that installed the running copy, while an explicit fresh installer
+launch is a newer choice and may replace the previous channel.
+
+### Managed Installation Contract MIC-1
+
+This is the normative, reusable contract for TR-300 and sibling CLI products.
+Implementations and documentation may use product-specific names, paths, and
+package identities, but must not weaken these semantics without a superseding
+ADR.
+
+**Preferred entrypoints.** “CLI preferred” means a managed prebuilt installer,
+not compilation from source and not a self-modifying loose binary:
+
+| Platform | Advertised default | Optional managed/native choices |
+|---|---|---|
+| Windows | versionless `irm .../tr300-installer.ps1 \| iex` | Global/Corporate MSI or Inno EXE |
+| macOS | versionless `curl .../tr300-installer.sh \| sh` | signed/notarized universal PKG |
+| Linux | versionless `curl .../tr300-installer.sh \| sh` | Cargo for developers; portable archives |
+
+The managed wrappers install prebuilt bytes, write a versioned cargo-dist
+receipt with the exact prefix, and are first-class update channels. Raw
+`cargo install` is an advanced package-manager channel, not the advertised
+default. Cargo provides no post-install hook; therefore a raw Cargo command
+cannot promise fresh-install takeover of an MSI, EXE, or PKG. Products must
+either supply an official managed wrapper/first-run convergence mechanism or
+state this limitation directly. TR-300 supplies the wrappers.
+
+**Operations have deliberately different authority:**
+
+| Operation | Version rule | Channel rule | Mutation rule |
+|---|---|---|---|
+| `tr300 update` | latest resolved release only | preserve proven current channel, edition, scope, and prefix | transactional replacement; never cross-fallback |
+| Fresh managed CLI installer | exact version bound into that downloaded wrapper; upgrade, same-version reinstall, or downgrade allowed | chosen managed CLI channel becomes authoritative | verify new copy/receipt, retire recognized prior native owner, then verify one active owner |
+| Fresh native installer | exact downloaded package version; upgrade, same-version reinstall, or downgrade allowed | chosen native format/edition/scope becomes authoritative only when the platform can prove a safe transition | Windows retires recognized competing owners; direct macOS PKG refuses standard managed ownership before payload and requires the supported uninstall-first transition |
+| Raw Cargo or portable copy | caller-selected bytes | unmanaged until current-executable plus durable metadata prove one channel | no claim that other registered installers were removed |
+
+“Latest” has two meanings and they must not be conflated. The versionless
+public command expresses the newest published release at download time. A CLI
+update is latest-only. A deliberately launched already-downloaded installer is
+the user's newest *intent*, even when its immutable version is older than the
+installed version. That fresh installer may downgrade; the updater may not.
+
+**MIC-1 invariants:**
+
+1. **Durable evidence beats path shape.** Receipts, native product identities,
+   package ownership, edition/scope markers, and Cargo metadata establish a
+   channel. An executable path alone cannot distinguish MSI from EXE or Cargo
+   from cargo-dist.
+2. **One resolution, immutable bytes.** Human-facing commands and filenames are
+   stable/versionless. Runtime installation resolves once and pins every script,
+   payload, sidecar, and Cargo version to that exact tag.
+3. **Updates preserve ownership.** No failed strategy may fall through to a
+   different installer, scope, edition, prefix, or package manager.
+4. **Fresh explicit choice is authoritative only inside a proven transaction.**
+   A recognized prior owner is retired through its real uninstall/receipt
+   mechanism where the platform owns rollback. Reinstall and downgrade remain
+   supported within a native channel. A direct macOS PKG does not mutate
+   user-owned managed state: it rejects that conflict before payload placement
+   and requires the managed owner to be removed first.
+5. **Ambiguity fails closed.** Unknown/conflicting identity, cancelled
+   elevation, policy block, or incomplete cleanup never becomes a success.
+   Existing working bytes are preserved when mutation has not begun. Managed
+   wrappers snapshot the prior managed/Cargo binary and receipt before invoking
+   cargo-dist and restore that snapshot when native convergence does not commit.
+   If a real native uninstaller or `pkgutil --forget` already commits and has no
+   supported inverse, retain the already-verified new managed owner and report
+   the exact partial native state; never delete both sides to imitate rollback.
+   Current Windows native packages invoke the bounded cleanup helper with
+   mandatory `--strict`; its Cargo/receipt pair is prevalidated and
+   transactionally quarantined/restored. Inno additionally runs that exact check in dry-run
+   form from an extracted candidate during `PrepareToInstall`, before removing
+   a same-edition MSI or writing native files. Packages never invent native
+   registration rollback. Failure states exactly which recognized owner
+   remains.
+6. **No counterfeit cleanup.** Only allowlisted product files and exact matching
+   metadata are removed. Never delete Cargo/rustup, a shared Cargo PATH entry,
+   Downloads, unrelated package receipts, or a running image.
+7. **Success is observed state.** Exit zero requires the expected on-disk
+   version, channel evidence, registration/receipt, PATH ownership, staging
+   cleanup, and absence of an unintended active duplicate. JSON stdout remains
+   exactly one object; progress and recovery diagnostics use stderr.
+8. **Compatibility bridges are explicit debt.** A legacy container stays only
+   when immutable clients require its stable filename. New clients do not use
+   it, hosted tests replay the old transition, and retirement requires a named
+   support boundary—not elapsed time.
+
+The public managed wrappers retain cargo-dist's generated installers as
+stable-name internal assets (`tr300-dist-installer.ps1` and
+`tr300-dist-installer.sh`). The release workflow renders the immutable tag,
+version, and exact SHA-256 of the corresponding raw `tr300-dist-installer.*`
+asset into each public wrapper; downloaded raw-script bytes must match before
+execution. The shell wrapper also supplies cargo-dist with a private,
+child-process-only `sha256sum` path backed by the fixed system
+`/usr/bin/shasum -a 256` on macOS (or a fixed native `sha256sum` elsewhere), so
+the archive checksum cannot take cargo-dist's optional-tool skip branch. This
+keeps cargo-dist's download, atomic-copy, PATH, and receipt behavior while
+making its checksum boundary mandatory and giving the product a safe
+cross-channel convergence layer. It adds two release assets, so a complete
+v4.2-series distribution target is 34.
+
+The managed shell transaction assigns cleanup only to `EXIT`; `HUP`, `INT`, and
+`TERM` first force a nonzero exit so execution cannot resume after rollback or
+after PKG-receipt retirement. Cleanup is one-shot and never marks an interrupted
+transaction committed. The executable fixture sends a real signal immediately
+after simulating receipt retirement and requires one cleanup, no resumed code,
+and no commit marker.
+
+Pre-tag validation must compile with warnings denied on native Windows, Linux,
+Intel Mac, and Apple Silicon; a helper hidden by host `cfg` is not considered
+used merely because another platform builds. Workflow validation must run
+official actionlint with ShellCheck discoverable on the hosted Linux runner so
+embedded `run:` scripts receive the same analysis as standalone scripts. A
+Windows actionlint invocation without ShellCheck on PATH remains a useful YAML
+check but is not equivalent evidence. Intentional literal-dollar fixtures use
+tightly scoped SC2016 annotations, while negative package assertions use
+explicit `if command; then ...; exit 1; fi` control flow so Bash `errexit`
+behavior is never the assertion mechanism. Trap-only cleanup callbacks may be
+classified as SC2317 or SC2329 by different supported ShellCheck versions; any
+suppression must name only those two diagnostics immediately above the callback
+and retain an executable rollback fixture.
+
+The v4.2.0 release attempt established another load-bearing boundary. Exact-SHA
+CI and crates publication passed, all six release targets built, and both Apple
+archives passed signing/notarization; the host then failed before GitHub Release
+creation because tests expected fully expanded URLs even though both wrappers
+deliberately compose pinned tag/base variables and asset suffixes. The shell
+assertion failed first; the PowerShell assertion had the same invalid model.
+Published tag and crate records remain immutable, so v4.2.1 fixes forward. CI
+now renders both wrapper templates with a synthetic immutable tag, rejects any
+unexpanded placeholder, and verifies each pinned tag, tag-bearing base, and
+exact internal asset reference independently. A release-
+host assertion must test the program's real composition model and must have an
+equivalent pre-tag fixture whenever it can prevent first publication.
+
+The immutable v4.2.1 release supplied a second boundary. Exact source
+`b45ec00b528c5707c9effd4f4407dacb2b6ae1b9` passed CI, crates publication,
+all six cargo-dist targets, both signed/notarized Apple archives, public-wrapper
+rendering, and Windows packaging. Native Intel and Apple Silicon package jobs
+then independently proved that rejecting ambiguous ownership from PKG
+`postinstall` is too late: Apple Installer may already have placed the new
+payload before that script fails. A failed package script is not evidence that
+the payload or receipt rolled back. The workflow withheld all four Mac assets,
+so the 30-asset release, tag, and crate remain immutable while v4.2.2 fixes
+forward.
+
+The reusable package rule is therefore transactional and phase-aware. A native
+package that may retire another installation channel must carry an exact copy
+of its candidate executable and run the bounded ownership check from
+`preinstall` in strict, non-mutating mode. Ambiguous or malformed state must
+stop before payload installation. Only `postinstall`, after the native owner
+exists, may commit the allowlisted cleanup and exercise its rollback. Hosted
+negative tests must name and check the old binary, old receipt, rejected
+payload, and rejected native receipt separately; a silent `test` behind shell
+`errexit` is not sufficient evidence.
+
+That v4.2.2 rule is retained as shipped history but is superseded for the direct
+macOS PKG by the v4.3 decision below. Native Intel and Apple Silicon hosted runs
+later proved that Apple Installer can retain the new payload after an intended
+`postinstall` failure even when the prior user-owned state is restored exactly.
+The overall managed-to-PKG operation therefore cannot be made atomic by a
+postinstall rollback helper. The direct PKG now contains only a non-mutating
+`preinstall`: any standard managed binary or receipt in a `/Users` home or an
+eligible local Directory Service home stops the package before
+`/usr/local/bin/tr300` or its native receipt is laid down. The scan is
+independent of console identity and PackageKit's launch environment. There
+is no PKG `postinstall` and no privileged user-home mutation.
+
+The same immutable-release principle applies to transition-fixture discovery.
+A previous complete release is evaluated against the asset contract that
+existed for that release, not the current release's newly added internal
+assets. Otherwise a legitimate historical baseline becomes impossible merely
+because the new release expands its artifact family. Current publication still
+uses the complete current contract. v4.2.2 encodes those two distinct lists and
+keeps the selected previous tag and SHA immutable for the transition job.
+
+### v4.2.2 release closure and evidence boundary
+
+MIC-1 and the direct-PKG decision became released, copyable product policy in
+v4.2.2. Exact source `db0f538c82961569a7118b105a20e967b15476f0`
+passed clean-tree package/publish dry runs, exact-SHA CI 29664547910, crates
+29664653519, cargo-dist Release 29664688035, native macOS 29664824418,
+Windows packaging 29664824432, and all 14 isolated Windows transition jobs in
+29664948031. crates.io checksum is
+`1e2aff33305a7eb31ed8ef54691a69de3c101435d8c88a320729940bb9f2f5c1`.
+The public release contains exactly 34 nonempty stable-name assets. Fresh
+downloads matched GitHub digests, sidecars, the aggregate checksum, and each
+versionless latest entrypoint; both public wrappers rendered one immutable
+v4.2.2 tag and no placeholder.
+
+The Apple gate is deliberately native and two-architecture. Both
+`macos-15-intel` and `macos-15` imported the dedicated Installer identity,
+verified the universal executable, direct PKG, and compatibility DMG, and
+passed signature, notary, staple, Gatekeeper, install, receipt/file ownership,
+update selection, malformed-owner pre-payload rejection, uninstall, and an
+immutable v4.1.3 DMG-client-to-v4.2.2 bridge. This is sufficient release proof
+without a physical Mac. A physical Mac is optional visual acceptance and
+becomes blocking only when native CI exposes a defect that cannot be observed
+without the visible Installer UI.
+
+The Alienware evidence boundary remains equally explicit. Hosted Windows jobs
+prove every disposable installer family and transition. The physical machine
+proves its long-lived registration, PATH, hardware, and terminal state only
+after a real UAC-approved transaction. Its final v4.1.3-to-v4.2.2 attempt was
+cancelled at UAC and therefore retained the single v4.1.3 Global MSI while
+returning one failure JSON object and recovery links. That cancellation is
+positive safe-failure evidence but is not a successful physical update. It
+does not invalidate the immutable release; it remains task `#w422` under the
+personal-hardware milestone and must be rerun only with the user present.
+
+This closure fixes the reusable proof hierarchy for sibling CLI products:
+source/unit gates establish logic, clean package gates establish publishable
+source, isolated hosted native matrices establish release portability and
+installer transactions, fresh public-byte checks establish distribution, and
+personal hardware establishes only the device-specific facts it actually
+observed. No layer may be promoted into evidence supplied by another layer.
+
+### Latest discovery, immutable installation
+
+Public commands, links, and asset filenames are versionless. Users download
+from `/releases/latest` or `/releases/latest/download/<stable-name>` and never
+need to edit a version embedded in a command. The updater follows a stricter
+two-stage rule: it queries the GitHub latest-release API once, validates the
+resolved tag/version, then constructs every payload and checksum URL from that
+immutable tag. Cargo receives the resolved `--version` and `--locked`; shell
+and PowerShell installers are fetched from the exact tag even though their
+filenames remain stable.
+
+This split is deliberate. A mutable latest URL is the correct human-facing
+entry point, but resolving it again during a multi-file update creates a
+time-of-check/time-of-use race if a release changes between the version check,
+payload download, and sidecar download. Stable filenames plus exact tagged
+bytes give both a durable user command and a reproducible update attempt.
+Cargo-dist's plan necessarily contains the exact announcement tag, but the
+checked-in release workflow normalizes the published release-note install and
+download URLs back to `/releases/latest/download/` before creating the release.
+The release tag/title still identify immutable history; user-facing artifact
+names and copy-paste commands do not embed a version.
+Cargo-dist creates the release once, and supplemental Windows and macOS jobs
+upload without `--clobber`. A collision or partial prior upload therefore fails
+the release; it is fixed forward under a new version instead of changing bytes
+or checksums behind an existing tag.
+
+### Install channel is product state
+
+The updater treats install format, edition, scope, and prefix as state rather
+than as a preference to rediscover on every run:
+
+| Detected running origin | Only permitted CLI update strategy |
+|---|---|
+| Global MSI | Global MSI, passive, UAC when required |
+| Corporate MSI | Corporate per-user MSI |
+| Global EXE | Global Inno Setup EXE |
+| Corporate EXE | Corporate per-user Inno Setup EXE |
+| cargo-dist PowerShell receipt | Exact-tag PowerShell installer and recorded prefix |
+| Cargo metadata | Exact resolved Cargo version with `--force --locked` |
+| macOS package receipt | Direct universal PKG and Apple Installer |
+| cargo-dist shell receipt | Exact-tag shell installer and recorded prefix |
+| Unknown, portable, or conflicting evidence | No mutation; recovery links only |
+
+Windows writes separate `InstallSourceGlobal` and `InstallSourceCorporate`
+values while retaining the legacy `InstallSource` value for compatibility. A
+missing marker may be recovered only when Add/Remove Programs registration,
+scope, and executable path identify exactly one MSI or Inno product. Cargo uses
+Cargo metadata. cargo-dist uses its versioned receipt and recorded install
+prefix. macOS uses the stable `pkgutil` receipt
+`com.qubetx.tr300.pkg`, but receipt existence alone is not ownership proof. The
+receipt identifier, version, install scope, payload list, per-file owner, and
+installed binary's valid Developer ID Application identifier, Team ID, and
+authority must all agree with the running `/usr/local/bin/tr300`. Path alone
+cannot distinguish Windows MSI from EXE and therefore cannot authorize a
+mutation.
+
+No strategy crosses into another channel after failure. Preserving the old
+working install is more important than “trying something” that creates a
+second registration, changes Corporate to Global, changes per-user to
+per-machine, or shadows the running binary. This also makes very old versions
+safe: legacy evidence is recovered when unambiguous and otherwise stops with a
+fresh-installer link instead of guessing.
+
+### Fresh installer intent and legacy consolidation
+
+A CLI update preserves origin; a manually launched fresh installer expresses
+newer intent. The public Windows PowerShell wrapper first lets cargo-dist place
+the exact managed binary and receipt, verifies both, enumerates MSI products by
+TR-300's two immutable UpgradeCodes and Inno products by their two immutable
+AppIds/roots, invokes their real uninstallers (elevating only native products
+that require it), removes stale scoped markers only after no native product
+remains, and verifies the managed binary again. A cancellation, malformed
+registration, or non-success uninstall is an installer failure with the
+versionless recovery page; it is never reported as convergence. Hosted jobs
+exercise all four native-to-PowerShell transitions independently.
+
+The public macOS/Linux shell wrapper similarly delegates byte installation,
+PATH, and receipt creation to the exact-tag cargo-dist script. On macOS only,
+an existing package receipt triggers takeover after the wrapper proves the
+receipt ID/root/payload/per-file owner and `/usr/local/bin/tr300` Developer ID
+Application identity/Team. One ordinary `sudo` ceremony removes that exact
+payload and forgets that exact receipt. The reverse transition is intentionally
+asymmetric beginning with v4.3: a direct PKG scans every `/Users` home,
+including dot-prefixed unregistered residue, plus all eligible local Directory
+Service homes during `preinstall`, independent of the console and launch
+environment, and refuses any
+standard managed binary or receipt without changing it. A managed user who
+wants the PKG first refreshes or reinstalls through the managed installer to a
+receipt-aware version, runs Complete uninstall, and then launches the PKG from
+a clean state. Native ARM and Intel jobs must begin that proof from the exact
+public v4.2.2 managed wrapper bound to its immutable release target and GitHub
+SHA-256 asset digest, prove candidate PKG refusal leaves it unchanged, refresh
+through the candidate managed wrapper, then run receipt-aware Complete and the
+candidate PKG. They must separately prove clean install, native upgrade/repair,
+and the still-supported PKG-to-managed direction. Linux has no
+native package competitor, so the same wrapper is a straight managed per-user
+install.
+
+Within a Windows edition, an MSI detects and removes the matching Inno
+registration before writing shared-path files, and Inno enumerates and removes
+the matching MSI product before installation. The new installer then writes
+its scoped marker. MSI UpgradeCode and Inno AppId continue to handle ordinary
+same-channel upgrades across arbitrarily old versions. Both MSI
+packages set WiX `MajorUpgrade AllowDowngrades='yes'`: an explicitly launched
+older or same-version MSI replaces the registered same-edition MSI instead of
+being blocked. This same-version behavior is part of the
+[WiX v3 `MajorUpgrade` contract](https://docs.firegiant.com/wix3/xsd/wix/majorupgrade/),
+not an inference from the path or product name. `RemoveExistingProducts` is
+scheduled after `InstallInitialize`, so a failed replacement can roll the old
+package back. The downgrade permission is intentional because a fresh installer
+launch is user intent; the automatic updater never selects an older release.
+This works for v4.1.0-and-newer MSI packages. An immutable historical MSI owns
+its already-published launch policy and may still block when launched against a
+newer installation; that safe stop cannot be fixed retroactively and must not
+be bypassed by deleting registered product state behind Windows Installer.
+
+The v3.17 `migrate-cleanup` remains the bounded Windows native post-install
+mechanism for a shadowing Cargo copy and the other Global/Corporate executable, but MIC-1
+supersedes its installer-facing advisory mode. v4.2.0 native packages pass
+mandatory `--strict` and expose no task/checkbox opt-out. Strict cleanup
+prevalidates an existing cargo-dist receipt before moving its binary, then uses
+a randomized same-directory quarantine and restores the pair if receipt removal
+cannot commit. An exact receipt may be removed only with its binary (or when the
+binary is already absent); a locked, permission-failed, malformed, or mismatched
+pair keeps the prior owner and fails the package visibly. The helper may not
+delete a toolchain, shared Cargo PATH entry, Downloads, or the running install. A
+no-admin Corporate installer detects a registered Global edition before it
+mutates the machine, stops with the stable managed-installer/release recovery
+path, and never forges success. The reciprocal Global-native check does the
+same for Corporate. The managed PowerShell installer is the supported
+cross-scope convergence path because it can request UAC only for the exact
+machine-wide uninstall that actually needs it. Installer-matrix gates detect
+duplicate active binaries, PATH entries, and product registrations. Native
+cross-scope cleanup that the package transaction cannot authorize must remain
+visible rather than deleting registered state behind Windows Installer.
+The pre-tag Windows gate builds a second MSI with the same version and another
+with a synthetic newer version for each edition, then proves a deliberate
+newer-to-current-to-same-version sequence converges to one current registration
+and executable.
+
+### Direct PKG distribution and the legacy DMG bridge (v4.2.0)
+
+The v4.1.0 decision correctly established the PKG as the ownership boundary,
+but unnecessarily made a DMG its normal transport. Apple supports distributing
+an independently signed installer package directly: Developer ID Installer
+signs the flat PKG, Notary Service accepts it, the ticket can be stapled, and
+Gatekeeper assesses it with the `install` policy. The DMG contributes no
+receipt, transaction, scope, payload ownership, or uninstall state. v4.2.0
+therefore supersedes the DMG-first user experience.
+
+The versionless public entrypoint is
+`tr300-universal-apple-darwin.pkg`. A current updater resolves latest once,
+constructs the exact tagged PKG and sidecar URLs, verifies SHA-256 mismatch
+protection, requires `pkgutil --check-signature` to name the configured
+Developer ID Installer Team, validates the stapled ticket and Gatekeeper
+install policy, and opens that staged package with `open -W -a Installer`.
+Success still requires Installer to return, the exact receipt to exist, and
+`/usr/local/bin/tr300 --version` to match. Cancellation or a verification/
+installation mismatch leaves the prior installation authoritative and exits 2
+with exact-tag and versionless recovery links.
+
+The durable channel does not change: both v4.1.x and v4.2.0 install
+`com.qubetx.tr300.pkg` at the same path. For JSON compatibility the existing
+`install_channel: "macos-dmg-pkg"` value remains stable; a successful new
+transaction reports the precise `strategy: "mac_pkg"`. New product designs
+should name the channel after the durable package manager/receipt from day one,
+not after an optional download wrapper.
+
+One compatibility constraint prevents deleting the DMG asset immediately.
+Immutable v4.1.0–v4.1.3 clients hard-code the exact-tag DMG filename and mount
+it before opening the nested PKG. Because they always resolve the newest release,
+omitting that asset from any future release would strand a machine that skipped
+the transition release. Each release therefore also carries a signed,
+notarized, stapled compatibility DMG containing the byte-identical direct PKG.
+It is not linked as the recommended installer and no v4.2.0+ updater uses it.
+Together with the two internal raw cargo-dist installer assets required by
+MIC-1, this raises the complete release from 30 to 34 assets. Retiring the bridge is a
+separate compatibility decision requiring an explicit support boundary and
+manual-recovery plan; elapsed time or “most users have upgraded” is not proof.
+
+Native Intel and Apple Silicon gates verify/install the direct PKG, compare it
+byte-for-byte with the nested compatibility copy, and replay an immutable
+v4.1.3 package-to-current update. Only the visible `open` launcher is replaced
+in that hosted replay with Apple's command-line Installer; old-client latest
+discovery, exact DMG/sidecar download, signature/notary/Gatekeeper checks,
+mount, receipt, version verification, and JSON are real. The first future
+v4.2.x-to-newer public transition remains required evidence for the direct
+`mac_pkg` update execution itself; clean same-version selection does not imply
+a future release existed during pre-release testing.
+
+A loose binary remains rejected because it has no package receipt, privileged
+transaction, uninstall inventory, or reliable updater origin. An artificial
+GUI `.app` remains rejected because TR-300 is a CLI. The direct PKG is the
+smallest artifact that satisfies the actual installation contract.
+
+### Apple credentials and hosted-native proof
+
+Developer ID Application and Developer ID Installer are distinct identities.
+The Installer private key and CSR may be generated with OpenSSL on the
+Alienware; Apple Developer portal authentication, 2FA, CSR upload, and
+certificate download do not require a Mac. Apple requires RSA 2048 for this
+portal CSR and the current G2 intermediary is preferred over the expiring
+previous Sub-CA. The certificate and encrypted private key are converted to a
+password-protected, Apple-keychain-compatible PKCS#12 outside the repository,
+uploaded through authenticated GitHub CLI, and imported only into an ephemeral
+runner keychain. Secret values never enter source, task boards, browser fields,
+or logs.
+
+Repository credentials add
+`APPLE_INSTALLER_CERTIFICATE_P12_BASE64` and
+`APPLE_INSTALLER_CERTIFICATE_PASSWORD`; the corresponding repository variable
+is `APPLE_INSTALLER_SIGNING_IDENTITY` and contains the certificate's full
+Developer ID Installer common name. Existing application-signing and App
+Store Connect credentials remain separate.
+
+Before any release Mac packaging, both native runner architectures import
+the Installer PKCS#12 into an ephemeral keychain and use `pkgbuild` to sign a
+disposable package. Verifying that package proves both the certificate and its
+matching private key are usable; merely finding the public certificate in a
+keychain is not sufficient evidence. Local OpenSSL integrity is also not a
+substitute for this gate: PKCS#12 algorithms accepted on Windows can still be
+rejected by macOS Keychain. Secret upload must use raw standard input without a
+literal `--body -` or newline transformation, and the hosted signing proof is
+rerun after any certificate, password, container, variable, or upload change.
+
+GitHub's native `macos-15` Apple Silicon and `macos-15-intel` runners are the
+required gate. They build, sign, notarize, install, report, select the update
+strategy, validate the mounted legacy bridge, and uninstall on the architecture
+they claim. A physical Mac
+is optional for visual inspection of Finder/Installer prompts and becomes
+blocking only if CI exposes a GUI-only defect. This avoids a strange
+cross-compilation/signing workaround on Windows without making the maintainer
+rent or borrow hardware for every release.
+
+### Hosted packaging lifecycle and tool syntax (v4.1.1 addendum)
+
+Source checkout is a workspace lifecycle boundary, not a harmless read. The
+checkout action cleans untracked files, so release inputs downloaded into the
+repository workspace before checkout may disappear even after their hashes
+were successfully verified. Supplemental packaging must therefore check out
+the exact immutable tag first and download release assets second (or place the
+assets in an explicitly preserved directory outside the checkout). The job
+must re-check that each expected input exists at the packaging call boundary.
+
+Workflow event identity is likewise not transitive. A workflow triggered from
+another `workflow_run` executes on the default branch; a second workflow chained
+from it receives `head_branch=main`, not the tag that triggered the original
+release. A downstream validator must bind itself to the successful immediate
+upstream run's exact `head_sha`, resolve exactly one immutable GitHub Release
+targeting that SHA, validate the semver tag and required assets, and fail closed
+on zero or multiple matches. Parsing a display title or assuming the tag
+survives another event hop was rejected as ambiguous metadata.
+
+Apple command-line syntax is also part of the release contract. On Xcode 16.4,
+universal-architecture verification requires the input operand first:
+`lipo <file> -verify_arch arm64 x86_64`. The input-last form failed on a hosted
+runner. The universal builder and both post-install architecture gates use the
+same input-first form. This is deliberately recorded as a lifecycle invariant,
+not merely a one-line correction: a package can be assembled correctly while
+a later validation command still rejects the same artifact if the two stages
+drift.
+
+v4.1.0 supplied the failure evidence. Its exact-SHA CI, crates publication,
+and signed/notarized per-architecture archives succeeded, but supplemental run
+29639135342 downloaded and verified both archives, then checkout removed the
+`upstream/` directory before the builder ran. The DMG was never created or
+uploaded. Supplemental Windows packaging run 29639135337 succeeded, but its
+chained validation run 29639224625 skipped because the second-hop
+`head_branch` was `main`. Its tag and existing assets remain immutable; v4.1.1
+fixes forward with checkout-before-download, input-first `lipo` calls, and
+exact-SHA release resolution for the Windows validation hop. This is the same
+immutable-release rule used for checksum, signature, or installer defects.
+
+**Rejected alternatives:** re-downloading inside the signing script hides the
+workflow ownership boundary and introduces a second network transaction;
+disabling checkout cleanup weakens reproducibility; altering or attaching new
+bytes to v4.1.0 would make the historical release mutable. None is acceptable.
+
+**Revalidation triggers:** changing checkout action/version or order, changing
+the workspace/output location, changing Xcode/macOS runner images, changing
+universal-binary tooling, changing a builder/validator command, or adding a
+workflow-event hop requires a native hosted packaging run through mount,
+install, both architecture checks, immutable upload, and every downstream
+validation job.
+
+### Supported macOS ownership proof (v4.1.2 addendum)
+
+Native v4.1.1 packaging run 29639898362 successfully downloaded both exact
+archives after checkout, used the input-first Xcode 16.4 `lipo` form, created
+and signed the universal binary and PKG, notarized and stapled the PKG and DMG,
+mounted the DMG, passed Gatekeeper, and installed the package on both Apple
+Silicon and Intel. Both validation jobs then failed at the same legacy call:
+current macOS `pkgutil` rejected `--verify` as an unrecognized option. The
+current Xcode `pkgutil(1)` command set contains `--pkg-info`, `--files`,
+`--file-info`, `--check-signature`, and related receipt operations, but no
+installed-package `--verify` operation. This was a validator defect, not an
+excuse to weaken origin proof, and v4.1.1's published assets remain immutable.
+
+The supported v4.1.2 ownership proof is conjunctive:
+
+1. `pkgutil --pkg-info com.qubetx.tr300.pkg` must report the exact package ID,
+   current executable version, and root volume. A root package may report an
+   empty `location:` or `/`; any non-root location is rejected.
+2. `pkgutil --files com.qubetx.tr300.pkg` must contain exactly the expected
+   relative payload `usr/local/bin/tr300`, and `pkgutil --file-info
+   /usr/local/bin/tr300` must name `com.qubetx.tr300.pkg` as its package owner.
+3. `codesign --verify --strict /usr/local/bin/tr300` must succeed. Its detailed
+   metadata must report identifier `com.qubetx.tr300`, Team ID `M9D5379H93`,
+   and a Developer ID Application authority. The installed executable must
+   then report the receipt/expected version.
+
+Package-container trust remains independently enforced before installation:
+`pkgutil --check-signature` validates the nested PKG signature,
+`spctl -a -t install` performs Gatekeeper assessment, and `stapler validate`
+checks the notarization ticket. These are not substitutes for installed-file
+ownership, just as receipt presence is not a substitute for code identity.
+The runtime updater intentionally invokes only supported public commands; it
+does not parse undocumented receipt database internals or depend on a removed
+compatibility switch.
+
+**Rejected alternatives:** receipt presence alone permits a replaced binary to
+inherit a stale channel; version/path alone permits an unsigned or foreign
+binary to impersonate the package; requiring `location: /` rejects valid root
+receipts observed on current hosted macOS where the value is empty; querying an
+obsolete `pkgutil --verify` command makes every genuine PKG install look
+unknown. All four violate safe origin preservation.
+
+**Revalidation triggers:** macOS/Xcode runner changes, package identifier or
+payload changes, signing identifier/Team/certificate changes, receipt parser
+changes, or updater origin/asset changes require both native architectures to
+repeat direct-PKG checksum/Installer-Team/notary/Gatekeeper checks, install,
+receipt and file-owner proof, binary signature/version proof, update selection,
+byte equality plus trust checks for the mounted legacy bridge, a real immutable
+v4.1.x bridge update, and uninstall cleanup.
+
+### Windows transition runner correctness (v4.1.2 addendum)
+
+The first fully dispatched v4.1.1 Windows matrix proved the exact-SHA resolver
+and clean install/update-detection/uninstall paths for both MSIs, both EXEs, and
+Cargo. It also exposed three distinct test/transition issues that clean installs
+could not reveal:
+
+- Both EXE-over-MSI takeover jobs exited 1 during Inno initialization. The
+  first hypothesis was an incorrect `var` declaration for the
+  `MsiEnumRelatedProductsW` output buffer. Hosted replay 29640785777 disproved
+  that as a sufficient fix: Inno Setup 6.7.1 still access-violated when the
+  preallocated string was passed without `var`. The decision is therefore not
+  to cross this DLL ABI from Pascal Script at all. The shared include uses
+  Inno's supported `RegGetSubkeyNames`/`RegQuery*` APIs and recognizes an MSI
+  only from the edition's correct registry scope plus exact display name,
+  publisher, `WindowsInstaller=1`, and a syntactically valid GUID product key.
+  It collects and bounds the full set before mutation, waits for each exact
+  `msiexec /x`, accepts only success/already-absent, and stops before writing
+  new files on ambiguity, restart, or removal failure. Because recognition is
+  based on durable native registration rather than only the current
+  UpgradeCode, the transition also covers older official MSI registrations
+  that retain the same product identity.
+  Global and Corporate enumeration explicitly inspects and deduplicates both
+  64-bit and 32-bit views of both ARP hives. Hosted run 29642711477 proved the
+  previous default found Global but missed Corporate. A controlled Alienware
+  install then established the decisive detail: the no-UAC Corporate per-user
+  MSI registered its exact ARP product under HKLM64 while its payload remained
+  in `%LocalAppData%`. The ARP hive is therefore not accepted as an install-
+  scope oracle. Exact edition display name, publisher, `WindowsInstaller=1`,
+  and GUID product key identify the same-edition MSI; the fresh install remains
+  authoritative while the product code is deduplicated before any mutation.
+  The same controlled lifecycle then proved Corporate MSI→Inno EXE and Inno
+  EXE→MSI both converge to one v4.1.2 registration and the matching scoped
+  marker. Final cleanup restored zero Corporate registrations/binaries and the
+  Alienware's natural Global MSI v4.0.1 plus legacy `msi-global` marker.
+- The reverse fresh transition has its own native-launch contract. Hosted
+  source gate 29642491361 proved EXE-to-MSI left both registrations even though
+  the exact Inno AppId search existed: a WiX Type 34 custom action requires the
+  executable's full path, while the package supplied only a relative
+  `unins000.exe`. Each MSI now reads the exact AppId registration's full
+  `UninstallString`, formats that path into the checked deferred action, and
+  runs it from `TARGETDIR` before MSI files are written. The registered path is
+  in machine scope for Global and user scope for Corporate, matching the
+  privilege context that executes it.
+- Starting legacy `powershell.exe` as a child of `pwsh` inherits the parent's
+  `PSModulePath`. On current Windows runners that can make Windows PowerShell
+  discover PowerShell 7's incompatible `Microsoft.PowerShell.Security` module
+  and exit before cargo-dist installation. Hosted validation executes the
+  script in its current `pwsh` host; runtime same-channel update prefers `pwsh`
+  when available and retains `powershell.exe` as the same-channel fallback.
+  This changes the interpreter, not the installation channel or prefix.
+- An already-current portable binary is a successful no-op even though its
+  origin remains `unknown`; no mutation is needed. An older portable binary
+  with an available update must instead exit 2, remain byte/version unchanged,
+  require user action, and return the versionless recovery page. Treating those
+  two states as the same assertion either invents a failure or fails to test
+  recovery.
+
+A fourth issue is specific to Windows' running-image lifetime. A
+Cargo-installed v4.1.0 fixture invoked the real v4.1.1 updater from a private
+`CARGO_HOME`; `cargo install --force --locked` compiled the exact target, then
+failed with access denied while moving the running `tr300.exe`. The updater
+returned 2 and the v4.1.0 binary remained runnable, but Cargo had recorded an
+empty v4.1.1 package entry beside the intact v4.1.0 registration. After that
+process exited, repeating the exact fresh Cargo command succeeded and Cargo
+automatically converged the metadata and binary to one v4.1.1 registration.
+This proves both the live-image cause and the safe fresh-channel recovery; it
+does not make an old updater capable of a handoff that was absent from its
+immutable code.
+
+Current Windows user-scoped updates therefore use a product-owned live-image
+transaction for Cargo, cargo-dist PowerShell, Corporate MSI, and Corporate
+EXE. Before invoking the preserved strategy, the running image is atomically
+renamed to a randomized private sibling in the same directory. The installer
+must recreate `tr300.exe` at the original path and that binary must report the
+resolved version. Failure removes any partial replacement and renames the old
+image back; success starts the verified new binary's hidden cleanup action,
+which accepts only an absolute same-directory
+`.tr300-update-backup-<pid>-<nonce>.exe` path and waits for the old process to
+release it. A later update also removes a stale private backup left by an
+interrupted cleanup helper; the elevated Global worker performs the same
+strictly named sweep before its transaction. The earlier rule that Global
+MSI/EXE could rely on
+Restart Manager to preserve their updater is superseded by the v4.1.3 addendum
+below. A reboot requirement or UAC/policy failure remains non-success on every
+channel.
+
+This handoff is intentionally runtime-owned rather than a Cargo build-script
+trick. Cargo build scripts are package builds and are constrained to their
+`OUT_DIR`; having a downloaded crate mutate an arbitrary existing executable
+or Cargo installation metadata during compilation would violate that boundary,
+run at the wrong lifecycle stage, and be unsafe to copy to other products.
+
+The pre-tag Windows source gate compiles the current MSI and Inno sources and
+tests both fresh takeover directions for each edition. This is the only way to
+prove a fix that does not yet exist in immutable public installers. The
+post-release matrix separately installs the most recent lower stable release
+that contains every required Windows family and exercises its real CLI updater.
+An older updater may either complete the preserved-channel transition or fail
+safely with exit 2, the old binary intact, required user action, and the stable
+recovery page. In the latter case the matrix follows that published recovery
+contract by launching the exact new same-channel asset, then requires one
+target version, marker, registration, PATH result, and a successful
+already-current no-op. Portable uses the older release only to prove safe
+recovery without mutation. Replaying an old release cannot be presented as
+proof of new source code.
+
+Hosted updater calls reuse `GITHUB_TOKEN`, or `GH_TOKEN` when that is the
+available caller credential, for the release API. The token is applied only as
+an authorization header and is never printed or persisted. Ordinary users
+without a token retain the public API path. Serializing the disposable matrix
+and authenticating current binaries reduces shared-runner rate-limit noise;
+neither weakens exact-tag resolution or permits a mutable asset URL.
+
+The matrix must also preserve native exit status as data. GitHub's current
+`pwsh` host can promote a nonzero native exit to a terminating error under the
+runner's stop-on-error preference. That is incompatible with a contract that
+deliberately distinguishes updater exit 2 (old bytes retained, recovery JSON,
+user action required) from success. The validation step disables only native-
+command error promotion, launches the updater as an isolated child, captures
+`Process.ExitCode`, stdout, and stderr, and then applies the strict assertions
+itself. It does not relax PowerShell exceptions,
+installer exit checks, JSON shape, channel identity, recovery URL, or final
+convergence. Run 29643664099 exposed this harness boundary by terminating before
+its own `update exit=...` diagnostic on every completed legacy channel job.
+Replay 29643849174 proved the preference switch by itself was insufficient for
+direct native invocation around an old updater/Windows Installer transaction.
+The durable runner pattern is therefore an isolated `Start-Process` child with
+redirected stdout/stderr and `Process.ExitCode`; the parent assertion shell
+survives even when the updater or Restart Manager terminates that child.
+
+**Rejected alternatives:** accepting a clean install as updater proof; invoking
+a different installer family after failure; hard-coding a historical version
+into the workflow; treating every unknown-origin invocation as an error;
+guessing another Pascal declaration for a Win32 output buffer after two hosted
+access violations; ignoring a nonzero Inno/PowerShell exit; claiming an
+immutable old binary exercised new updater code; mutating the installed Cargo
+binary from `build.rs`; or letting the PowerShell host turn an expected native
+exit into control flow before the recovery contract is inspected. The matrix
+resolves immutable releases and stable asset names dynamically and fails before
+claiming convergence.
+
+**Revalidation triggers:** changes to the PowerShell cargo-dist template or
+launcher order, MSI UpgradeCodes/product scope, Inno registry identity or
+takeover code, marker/ARP recovery, update JSON semantics, portable behavior,
+live-image handoff/cleanup naming, Cargo installation behavior, GitHub API
+authentication, or Windows runner/PowerShell images require the compiled-source
+takeover gate plus the full prior-version update/recovery, current-version
+no-op, registration convergence, cross-format takeover, and uninstall matrix.
+
+### Elevated Global Windows live-image transaction (v4.1.3 addendum)
+
+**Status:** Accepted and release-blocking. This supersedes the assumption that
+launching a native per-machine installer from the running Program Files binary
+is sufficient for graceful updater completion.
+
+#### Context and decisive evidence
+
+Isolated post-publication run 29644024006 installed immutable v4.1.1 clients
+and captured each updater as a separate process with independent stdout and
+stderr files. Global MSI, Corporate MSI, Global EXE, and Corporate EXE all
+resolved v4.1.2, selected the correct origin-preserving strategy, downloaded
+the correct stable-name asset from the exact tag, verified its sidecar, and
+printed the matching Windows Installer or Inno launch message. Each updater
+then ended with signed process exit `-1073741510`, Windows status
+`0xC000013A` (`STATUS_CONTROL_C_EXIT`), and zero stdout objects. Cargo and
+PowerShell completed the same transition and no-op gates, and both fresh-format
+choice jobs passed. That combination rules out discovery, checksum, channel
+selection, package availability, and harness native-error promotion.
+
+Windows Installer 4 and later integrates
+[Restart Manager](https://learn.microsoft.com/windows/win32/rstmgr/about-restart-manager).
+When a file to be replaced is held by a running console application, the
+installer may shut down that application. The same externally visible outcome
+occurs when Inno invokes its native replacement lifecycle against the live
+product image. A child
+installer can therefore continue after terminating the parent that was waiting
+to verify it. The install may converge, but the CLI cannot emit its promised
+one-object JSON result, distinguish cancellation/failure, or schedule its own
+cleanup. Treating this as success would make machine-readable automation depend
+on installer timing and would erase the post-install verification boundary.
+
+#### Decision
+
+All Windows channels use the same logical live-image transaction, with
+privilege placement determined by install scope:
+
+1. The ordinary updater resolves GitHub `latest` once, validates a plain
+   release version, proves exactly one install channel, and constructs the
+   exact tagged stable-name asset and checksum. It never delegates discovery or
+   channel choice to an elevated process.
+2. User-scoped Cargo, PowerShell, Corporate MSI, and Corporate EXE rename the
+   running image directly because the user owns its directory. Global MSI and
+   Global EXE instead create only an unused private sibling *plan* and call the
+   installed binary through native
+   [`ShellExecuteExW`](https://learn.microsoft.com/windows/win32/api/shellapi/nf-shellapi-shellexecuteexw)
+   with verb `runas`,
+   `SEE_MASK_NOCLOSEPROCESS`, and `SEE_MASK_NOASYNC`. This is one UAC ceremony;
+   the elevated native installer inherits the worker token and must not prompt
+   a second time.
+3. The hidden worker accepts only `msi_global` or `exe_global`; a three-part
+   numeric version no longer than the bounded input; current durable origin
+   evidence matching that exact format/edition/scope; and an absolute,
+   same-parent, not-already-existing
+   `.tr300-update-backup-<pid>-<nonce>.exe` path beside a running file named
+   `tr300.exe`. It cannot select Corporate, Cargo, another asset, another path,
+   or an arbitrary command. Windows command-line arguments are quoted with the
+   documented backslash/quote rules before the wide-character API call.
+4. Only after those checks does the elevated worker rename the executing
+   Program Files image. Windows permits renaming a running image; the parent and
+   worker retain handles to the private sibling, while the installed path is
+   free for the original MSI/Inno engine. The worker downloads/verifies the
+   pinned asset using the ordinary bounded private staging code, waits for the
+   installer, and re-executes the original path's `--version`.
+5. Strategy failure removes any partial original-path replacement and renames
+   the private old image back before returning nonzero. Success starts the new
+   original-path binary's strict cleanup action. Because it is a child of the
+   elevated worker, it retains permission to delete the Program Files sibling
+   and polls only that validated path until both old processes release it.
+6. The non-elevated parent waits on the process handle returned by
+   `ShellExecuteExW`, closes the handle on every completed wait path, verifies
+   the installed version again, and is the only process that emits the final
+   human or JSON outcome. UAC cancellation occurs before rename and returns the
+   normal failed-strategy recovery contract. Worker policy failure uses a
+   distinct internal exit solely so the parent can retain `PolicyBlocked`
+   semantics; it does not change the public exit-2 contract.
+
+This is an update-in-place transaction, not an alternate installer. It
+preserves Global MSI versus Global EXE, edition, machine scope, Program Files
+path, product registration, marker, and PATH. The worker is allowed to reinstall
+the same exact version only as an internal validation/repair primitive; the
+public updater remains latest-only and returns a no-op when already current. A
+manually launched fresh installer remains authoritative and may choose another
+format or an older/same version under the separate fresh-install intent rule.
+
+#### Failure and recovery boundaries
+
+No filesystem transaction can make an arbitrary power loss between rename and
+rollback impossible. The durable safety boundary is narrower: returned
+failures attempt rollback before the worker exits; UAC cancellation mutates
+nothing; a crash may leave the sole old image under a product-private sibling
+that is never placed on PATH and is named in diagnostics; a verified success
+has a complete original-path replacement before cleanup begins. The updater
+never directly overwrites a running image, deletes the only known-good copy as
+a fallback, switches installer families, or reports success before two version
+checks.
+
+Immutable clients that predate this decision cannot be taught the handoff.
+Release validation may recognize their historical termination only when all
+four facts agree: native MSI/EXE channel, exact `0xC000013A` exit, zero stdout,
+and the matching same-channel installer-launch diagnostic. The harness first
+waits a bounded period for that already-launched transaction. If it has not
+converged, it invokes only the exact tagged same-channel candidate; MSI
+`ERROR_INSTALL_ALREADY_RUNNING` (1618) is retried within a bound. It then
+requires one target binary/registration, correct marker and PATH, successful
+current no-op JSON, markerless unambiguous recovery, and uninstall. This is
+legacy recovery evidence, never a substitute for testing current code. Current
+Global jobs prove the exact frozen installer as a same-version repair while the
+candidate remains private. After publication, the automatic public matrix
+invokes the strict network-backed worker against the immutable tag, requires its
+private backup to disappear, and repeats binary, registration, marker, and PATH
+convergence checks.
+
+#### Real legacy-to-current evidence
+
+The Alienware's natural Global MSI supplied the required post-release legacy
+proof on 2026-07-18. Its immutable v4.0.1 updater resolved the public v4.1.3
+release, selected only Global MSI, downloaded and checksum-verified the exact
+tagged asset, and launched Windows Installer after one approved UAC prompt.
+Restart Manager then ended the old parent before final JSON, while the already-
+started MSI converged to one v4.1.3 Program Files binary and one HKLM product.
+Fresh-shell evidence required the Global scoped and legacy markers, exactly one
+machine PATH entry, no Corporate/Cargo/user-PATH/live-image-backup copy, and an
+exit-0 current-version response containing exactly one JSON object. This is the
+legacy recovery branch described above; it does not claim that v4.0.1 executed
+the live-image worker added in v4.1.3.
+
+The interrupted legacy parent left one inert private staging directory
+containing only its verified MSI. That residue was neither registered nor on
+PATH and was inspected and removed as an exact test fixture. This sharpens the
+evidence vocabulary for reuse: an immutable old process may be terminated
+before its RAII staging guard runs, so final one-copy ownership and PATH proof
+must be reported separately from transient-cache cleanup. Current-source gates
+still require their own staging and private live-image backups to disappear;
+validators must never treat an arbitrary similarly named temporary directory
+as product-owned or delete it without exact provenance.
+
+**Rejected alternatives:** relying on Restart Manager to preserve/rename the
+updater after it demonstrably terminated it; invoking `powershell Start-Process
+-Verb RunAs` and inheriting another interpreter/quoting/module boundary; asking
+the native installer to launch a second updater without a parent-verifiable
+result; elevating the entire public update before resolving origin; disabling
+Restart Manager globally; copying into a different active PATH directory;
+direct overwrite/delete; treating zero-JSON termination as successful current
+behavior; or falling back from MSI to EXE/Cargo. Native `ShellExecuteExW` keeps
+the elevation mechanism at the OS boundary and returns the exact process handle
+needed for the parent contract.
+
+**Revalidation triggers:** changes to `ShellExecuteExW` flags, command-line
+quoting, hidden action parsing, version/origin/backup validation, Program Files
+layout, backup naming, worker exit mapping, cleanup token/lifetime, MSI/Inno
+launch flags, Restart Manager policy, Windows runner image, or update JSON
+ownership require Windows unit/Clippy gates plus prior-version transition,
+private frozen-byte same-version repair, post-public Global worker repair,
+rollback/failure recovery, one-copy registration/PATH proof, no-op JSON, and
+uninstall on disposable Windows. A future real old-to-new release must exercise
+the parent `runas` path; the network-backed worker is not a valid pre-public
+test because its immutable anonymous tag URL does not exist until publication.
+
+### Authenticated and diagnosable hosted updater probes (v4.1.3 closure)
+
+**Status:** Accepted. This is a validation-harness rule; it does not relax the
+ordinary user's public, unauthenticated update path or the one-object stdout
+contract.
+
+The first Apple Silicon validation attempt in macOS DMG run 29645855688 proved
+the v4.1.3 DMG checksum, DMG signature/staple/Gatekeeper result, nested PKG
+signature/staple/Gatekeeper result, installation, receipt and file ownership,
+universal architectures, installed Developer ID identity, and report modes.
+It then stopped when `tr300 update --json` returned 2. The identical Intel job
+queried the same newly published release seconds later and passed. Re-running
+only the failed boundary repeated the complete Apple Silicon lifecycle,
+including the updater no-op and uninstall, and passed; the gated publisher then
+attached the two DMG assets. This is release-edge/API evidence, not permission
+to ignore a failed Mac lifecycle.
+
+The first attempt also exposed an observability defect: Bash `set -e` exited on
+`update=$(...)` before the captured JSON could be printed, so the log retained
+the exit status but hid the updater's recovery object. Hosted updater probes
+now receive the job's existing read-only `github.token` through
+`GITHUB_TOKEN`, which `src/update.rs` already consumes only as an Authorization
+header and never prints or persists. The shell temporarily disables `errexit`
+only around the updater assignment, records its status, writes the captured
+object to the Actions log on stderr, restores `errexit`, and independently
+requires exit 0 plus the expected parsed fields. Product stdout is still one
+object; the log copy is test evidence, not a second stdout emission.
+
+**Rejected alternatives:** accepting a single failed architecture because its
+sibling passed; weakening the updater assertion; sleeping for an arbitrary
+release-propagation delay; retrying without preserving the first result; or
+printing a token. A bounded failed-job rerun is acceptable only after all
+artifact/trust evidence shows the payload itself is unchanged and the rerun
+repeats the complete failed architecture lifecycle before publication.
+
+**Revalidation triggers:** changes to release discovery, token environment
+handling, update JSON/exit behavior, GitHub permissions, release publication
+ordering, or the Mac validation shell must re-run actionlint and both native
+Mac install/update/uninstall jobs. A future failure must expose the updater
+status and JSON before anyone classifies it as transport, propagation, origin,
+or product behavior.
+
+### Machine-readable and failure contract
+
+Update JSON stdout is exactly one object; child installer output and progress
+go to stderr. Existing keys and Windows `install_origin` remain. Additive keys
+are `install_channel`, `recovery_url`, and `requires_user_action`. A failed
+known installer channel also carries `exact_installer_url`; this pins the
+matching recovery payload while `recovery_url` stays the versionless release
+page. Successful same-channel/no-op updates return 0. Cancellation, ambiguity,
+restart-required installer exits, blocked staging, failed verification, or installer failure
+returns 2 and keeps the old installation.
+
+When the channel is known, failure output includes the exact tagged matching
+payload and the versionless latest release page. When origin is unknown, no
+payload is guessed and the fresh-installer page is the recovery path. Windows
+MSI codes 3010 and 1641 and the equivalent Inno restart exit are never
+misreported as a complete in-place update.
+
+### Reusable contract for other CLI products
+
+The v4.1.3 implementation is intended to be copied into other standalone CLI
+products. Product names, package identifiers, paths, asset names, registry
+keys, and installer GUIDs are parameters; the following invariants are the
+portable architecture:
+
+1. **Separate explicit install from self-update.** A deliberately launched
+   fresh installer is the user's newest instruction and may select a different
+   format, scope, edition, or even an older/same version. A self-update is
+   latest-only and preserves the proven format, scope, edition, and prefix.
+   Never apply fresh-install downgrade semantics to an automatic update.
+2. **Make origin durable product state.** Native product registration and
+   package receipts outrank paths. Product-owned receipts are versioned and
+   record product identity, channel, prefix, installed version, and write time.
+   A path may bound a candidate but cannot distinguish formats that share it.
+   Missing state is recoverable only from one unambiguous native registration;
+   equal, stale, or conflicting evidence becomes unknown.
+3. **Prove receipt ownership, not receipt presence.** For a native package,
+   require the package ID, recorded payload path, installed file owner,
+   receipt/package version, running executable path, and installed binary's
+   native signing identity to agree. Validate the package container's signature,
+   notarization, and platform trust separately before installation. Use only
+   commands supported by the current platform; an obsolete verification switch
+   that always fails is not conservative because it hides every legitimate
+   origin. Apply equivalent identity/registration checks on Windows and
+   package-manager metadata checks elsewhere.
+4. **Resolve mutable discovery once.** Public filenames, download commands, and
+   recovery pages remain versionless. The updater resolves `latest` once, then
+   pins the tag/version for the payload, sidecar, package-manager command, and
+   post-install expectation. Do not fetch one transaction from multiple
+   mutable `latest/download` URLs.
+   Treat the resolved tag and every attached asset as immutable: supplemental
+   upload jobs must refuse collisions rather than clobber public bytes.
+5. **Treat replacement as a transaction.** Use private randomized staging,
+   payload size limits, cryptographic digest checks, native signature/trust
+   checks, and the original installer engine. Never delete or directly
+   overwrite the sole working copy as a fallback. If a platform locks a running
+   image, move it only through a same-directory, product-private transaction
+   with validated delayed cleanup and rollback of a failed replacement. When
+   the directory requires elevation, resolve channel/version in the ordinary
+   parent and elevate only a strict native worker; keep the parent alive on a
+   returned process handle so it owns final JSON. Report success only after the
+   installer exits successfully, durable ownership metadata matches, and the
+   intended executable reports the resolved version.
+6. **Converge fresh installs before claiming ownership.** An official installer
+   removes or upgrades recognized conflicting registrations for the selected
+   product before it writes shared-path files. If privilege is insufficient,
+   it stops or reports the exact remaining conflict; it never claims a
+   one-copy result it did not establish. A package manager with no install-time
+   lifecycle hook needs an official wrapper/first-run convergence step or must
+   be documented as unable to guarantee cross-method takeover.
+7. **Fail closed and remain recoverable.** Cancellation, ambiguity, policy
+   blocks, reboot-required exits, checksum/signature failure, or post-install
+   mismatch retains the old working copy, returns a stable nonzero exit, and
+   supplies both the exact matching tagged asset when one is known and the
+   versionless fresh-install/release page. JSON stdout remains exactly one
+   backward-compatible object; child progress is stderr-only.
+8. **Test transitions, not only clean installs.** Every release gate covers
+   old-to-new and very-old-to-new updates, same-version repair, explicit
+   downgrade, every supported cross-format transition (including deliberate
+   refusal and uninstall-first flows), missing metadata, conflicting metadata,
+   cancellation/UAC denial, restart-required exits, corrupted downloads,
+   PATH/registration cleanup, uninstall, and the absence of duplicate active
+   binaries. Tests deliberately remove markers/receipts so recovery behavior
+   is evidence rather than an unexercised branch.
+9. **Treat workflow ordering and validator syntax as product code.** Establish
+   the immutable source checkout before downloading transient release inputs,
+   or preserve those inputs outside the cleaned workspace. Keep every builder
+   and post-install validator invocation in lockstep, including operand order,
+   and revalidate after runner/Xcode changes. Bind chained workflows to exact
+   upstream SHA/release identity instead of assuming branch/tag context crosses
+   event hops. A successful checksum in one step does not prove the input still
+   exists or that a later tool call or downstream job is valid. Hosted updater
+   probes use the job's read-only API token and must log captured JSON plus exit
+   status on stderr before asserting it, so a release-edge failure is
+   diagnosable without weakening product stdout.
+10. **Separate source proof from legacy recovery proof.** Compile and exercise
+    current installer/updater source before tagging. Post-release, run a real
+    immutable older client: accept either a genuine same-channel update or its
+    documented safe failure followed by the exact fresh same-channel recovery.
+    Require final one-copy/one-registration convergence in both cases. Never
+    imply that replaying immutable old bytes executed a newly authored fix.
+
+These rules are intentionally stricter than “download the newest binary and
+replace the file.” The portable unit is the installation transaction and its
+durable ownership evidence, not merely an executable byte stream.
+
+---
+
+## Cross-platform report semantics (v4.0.0)
+
+Substantially revised and released 2026-07-14. Alienware verification completed
+2026-07-17; AMD64 Linux laptop and Raspberry Pi 4 live checks remain tracked
+continuation and their absence must not be rewritten as proof.
+
+### One Rust product, platform adapters, and two collection budgets
+
+TR-300 is one Cargo package, one `tr300` binary, and one Rust library surface.
+macOS, Linux, and Windows are not separate products and must not grow separate
+CLI grammars, report schemas, renderers, or release versions. Shared code owns
+the `SystemInfo` aggregate, collection orchestration, value definitions,
+rendering, JSON, save policy, and error contract. Platform differences live in
+cfg-gated collectors and installers, with native APIs/files used first and
+bounded subprocess fallbacks used only where they add defensible evidence.
+
+`SystemInfo::collect_with_mode` runs the OS, CPU, memory, disk, network,
+session, and platform collectors in scoped parallel work, converts core-thread
+panics into a reportable error, and treats platform enrichment as optional.
+This keeps one semantic assembly point while allowing each OS to use its own
+authoritative sources. A missing tool, denied permission, timeout, malformed
+response, or unsupported fact becomes absence/fallback—not a platform fork and
+not a whole-report failure.
+
+The same product intentionally has two collection budgets:
+
+- **Full** is the normal detailed report. It may run bounded profiler, WMI,
+  resolver, login, encryption, firmware, or health probes.
+- **Fast** is the shell-startup path. It avoids slow subprocess-heavy work and
+  may leave optional rows/JSON values absent, but values it does emit retain the
+  same meaning as full mode. Fast does not substitute guesses for skipped facts.
+
+The install-time auto-run uses `tr300 --fast`; the `report` alias remains a
+normal full invocation. Neither mode saves unless the explicit full-table save
+flag is present. This separation makes startup latency a contract without
+weakening the accuracy contract.
+
+**Rejected alternatives:**
+
+- Separate macOS/Windows/Linux editions: fixes would drift, consumers would
+  receive different schemas, and cross-platform comparisons would stop meaning
+  the same thing.
+- Run every probe in fast mode: shell startup would inherit the slowest WMI,
+  profiler, login, resolver, or encryption command and violate the 1.5-second
+  hosted budget.
+- Give fast mode friendly placeholder values: omission accurately says “not
+  collected under this budget”; a placeholder can be mistaken for measured
+  hardware state.
+- Move platform parsing into the renderer: presentation would become coupled to
+  command output and make table/JSON/Markdown disagree.
+
+**Consequences and revalidation:** a platform-local accuracy fix belongs in its
+cfg-gated collector plus shared fixtures/tests. A change to shared aggregation,
+definitions, schema, renderer, command helper, dependencies, or mode semantics
+is cross-platform and reopens the relevant Linux/Windows/Mac gates; during the
+Alienware continuation it also reopens native arm64 and Rosetta qualification.
+
+### Stable table, JSON, locale, and privacy contracts
+
+The human table and machine JSON are two views of the same collected record,
+not independent implementations. The table remains a compact 51-display-column
+surface with a 12-column label and 32-column value field. Display width is
+measured with `unicode-width`, not scalar/byte count, so wide characters cannot
+break borders. Strings truncate with an ellipsis inside the allotted display
+width. ASCII mode changes only presentation characters, not values.
+
+Encoding setup precedes output. On Unix, locale inspection can select ASCII
+before any box-drawing character is printed. On a Windows terminal, the output
+code page is set to UTF-8 before the report renders. This ordering is
+load-bearing: printing a Unicode banner first would make the fallback too late.
+
+Schema-v1 JSON is constructed as a typed `serde_json::Value` and serialized
+once. Existing keys and types remain stable; v4 additions are nullable/context
+keys. Numeric non-finite values become JSON `null`. CPU, disk, memory, load,
+frequency, route, uptime, and availability fields include enough provenance or
+definition context that consumers do not need to infer platform-specific
+meaning from a label. Table, JSON, and manually saved Markdown must derive from
+the same facts.
+
+Privacy is part of the information contract. Useful model, board, firmware,
+display, battery, session, and network context may be reported; hardware serial
+numbers, platform UUIDs, and similar persistent unique identifiers are not.
+
+**Rejected alternatives:**
+
+- Count `.chars()` for terminal layout: Unicode scalar count is not terminal
+  display width.
+- Hand-build JSON punctuation/escaping: unusual device/user text and non-finite
+  values can produce invalid or ambiguous output.
+- Use different field definitions per renderer: a value that changes meaning
+  between table and JSON is not cross-platform precision.
+- Print Unicode before locale/code-page setup: recovery cannot repair bytes
+  already emitted.
+- Add serials/UUIDs “for completeness”: they add tracking risk without helping
+  the machine-health purpose.
+
+**Consequences and revalidation:** renderer changes require fixed-width ASCII
+and Unicode tests; JSON changes require parse/schema compatibility tests and a
+consumer review; platform information additions require privacy review. A
+shared renderer/schema change also crosses the frozen Mac boundary.
+
+### Why this is v4.0.0 rather than v3.18.0
+
+The command-line and JSON work is additive: existing schema-v1 keys retain
+their names and types. The Rust library surface is different. `SystemInfo`,
+`Config`, and several public collector records gained fields, and selected
+public collector helper signatures changed. A downstream crate that uses a
+struct literal or exhaustive pattern can therefore stop compiling. Rust SemVer
+treats that as a major change even when ordinary CLI users see no break.
+
+The release is consequently v4.0.0. Changed record types are marked
+`#[non_exhaustive]` at the major boundary so future additive fields can remain
+minor releases. The v4 migration note must tell library consumers to prefer
+collection/default APIs, avoid exhaustive public-record patterns, and update
+calls to the changed collector helpers. This is more accurate than either
+calling the source break “additive” or falsely presenting JSON as incompatible.
+
+### Evidence-backed optional values
+
+An absent optional field means “TR-300 could not establish this fact through a
+reliable, bounded source.” It does **not** mean the negative of the fact.
+
+Examples:
+
+- No virtualization signal is not proof of Bare Metal. A hypervisor label is
+  emitted only for positive CPUID, registry, `/proc`, container, WSL, or known
+  macOS guest-model evidence.
+- A failed BitLocker/FileVault/LUKS probe is not proof that encryption is Off,
+  and not proof that elevation would make the probe work.
+- Missing physical topology is not replaced with logical processors. SMT and
+  vCPU counts must not be relabeled as physical cores.
+- Windows has no Unix-style 1m/5m/15m load average. One instantaneous CPU sample
+  is not repeated into three fake time windows.
+- Rosetta's translated compatibility CPU frequency is not host hardware data;
+  `null` is more precise.
+
+**Rejected alternative: friendly defaults such as `Bare Metal`, `1 socket`, or
+logical=physical.** These look complete but turn lack of evidence into a false
+claim, which is especially damaging in JSON automation. Optional absence is
+deliberate information.
+
+### One native macOS snapshot, including Rosetta
+
+Full-mode macOS launches one bounded
+`system_profiler -json SPHardwareDataType SPDisplaysDataType SPPowerDataType
+SPSoftwareDataType` snapshot. The collector parses only the facts it displays:
+model name/identifier, GPU names, current display mode and native pixel size,
+battery condition/maximum capacity/cycles, actual boot state, and known guest
+virtualization indicators. It deliberately does not surface serial numbers,
+hardware UUIDs, platform serials, or other unique device identifiers.
+
+One snapshot was chosen over several profiler invocations because profiler is
+the slowest Mac probe, JSON is less locale-sensitive than its text format, and
+the fields describe one coherent moment. Missing/malformed sections retain the
+existing quick `sysctl`/`ioreg`/`pmset` fallbacks.
+
+When the TR-300 process is translated, `/usr/bin/arch -arm64
+/usr/sbin/system_profiler ...` requests the native slice. Live testing showed
+the x86_64 slice can return generic model/chip values and omit battery maximum
+capacity. The native slice describes the same physical host accurately while
+`sysctl.proc_translated` still lets the report name the process scope as
+`arm64 host / x86_64 (Rosetta 2)`. If native launch fails, the translated
+profiler remains a fallback.
+
+**Rejected alternatives:**
+
+- Run separate profiler commands per data type: slower and can describe
+  different moments.
+- Parse localized text: brittle across locales and macOS revisions.
+- Label Apple Silicon as a boot mode: CPU architecture is unrelated to Normal,
+  Safe, or Recovery boot state.
+- Trust the translated 2.4 GHz value: it is a compatibility observation, not a
+  defensible host-frequency measurement.
+- Include hardware serial/UUID for “more information”: unnecessary for a
+  machine-health report and creates privacy/tracking risk.
+
+macOS 26 `Tahoe` and macOS 27 `Golden Gate` mappings are checked against
+[Apple's current macOS page](https://www.apple.com/os/macos/); unknown future
+versions remain unlabeled rather than being guessed.
+
+### Disk and memory value definitions
+
+#### Disk
+
+The report chooses one system/root volume: `/` on Unix or the normalized system
+drive on Windows, then a single largest fixed-volume fallback, then a removable
+volume only if no fixed volume exists. It never sums every mount. APFS volumes,
+BTRFS subvolumes, bind mounts, Windows drive letters, and container mounts can
+overlap or describe independent resources; a machine-wide sum is not a coherent
+capacity.
+
+On Unix, `statvfs` distinguishes total blocks, all free blocks, and blocks
+available to an unprivileged caller. On Windows, `GetDiskFreeSpaceExW` provides
+the corresponding total/free/available values. Therefore:
+
+- `disk.used_bytes = total - free` and means allocated bytes.
+- `disk.available_bytes` means bytes available to the current caller.
+- `disk.percent` is allocated / total.
+
+These values can legitimately make used + available differ from total because
+of reserved blocks, quota views, and filesystem policies. JSON names both
+definitions so consumers do not infer the wrong equation.
+
+#### Memory
+
+Non-macOS platforms use operating-system available memory and define used as
+`total - available`. macOS uses the Activity Monitor-compatible working set
+from `vm_stat`: `(active + wired + compressed) * page_size`. Available is
+`total - reported_used`, so the displayed pair is internally consistent and
+cannot say both “81% used” and “0 available.”
+
+Inactive/cached pages are intentionally not counted as used in that Mac formula.
+Swap is reported separately. JSON includes `usage_definition` and
+`availability_definition` because “used RAM” is not a universal kernel metric.
+
+**Rejected alternative: expose sysinfo's Mac used and available counters
+together.** On the live M2 host, compressor accounting made those independent
+values contradictory. A shared definition is more useful than mixing two
+legitimate but incompatible accounting views.
+
+### Bounded subprocess, save, JSON, and update primitives
+
+Optional tools are untrusted from a reliability perspective: they may hang,
+spawn descendants, block after filling one pipe, or produce unbounded output.
+`src/collectors/command.rs` therefore drains stdout/stderr concurrently, caps
+captured output at 8 MiB, enforces fast/normal/slow deadlines, kills the Unix
+process group on timeout, and uses a Windows Job Object best-effort. A missing
+tool, timeout, nonzero status, malformed response, or overflow yields `None`.
+
+**Rejected alternative: `Command::output()` plus a polling timeout.** A child
+can block in `write()` after a pipe fills, never reaching the timeout polling
+state; killing only the immediate process can also leave descendants alive.
+
+Report JSON is assembled as a typed `serde_json::Value` and serialized once.
+This centralizes escaping and non-finite handling. Schema version 1 remains
+because every new field is additive; existing key names and types are retained.
+
+Markdown files use an OS Downloads directory when available, unique suffixes,
+`create_new`, flush/sync, and cleanup on error. Existing paths and symlinks are
+never followed or overwritten. The writer is reachable only through explicit
+`-r`/`--report`/`-s`/`--save`; ordinary full/fast/JSON runs are the
+side-effect-free default. `--no-save` remains a hidden compatibility no-op.
+
+Windows updater payloads use a `tempfile`-managed private randomized directory,
+bounded response sizes, explicit cleanup, and cleanup diagnostics. The SHA256
+sidecar detects corruption or a mismatched payload/sidecar pair; it is not
+described as an independent signature because both files share release
+transport. Post-install `--version` remains the success source of truth.
+
+### Why report persistence is explicit-only
+
+The original convenience behavior automatically wrote a Markdown file after
+every full table run. On a managed Windows endpoint, the operator observed the
+work antivirus flagging that unexpected report-file activity and freezing the
+machine. The data collection and terminal output were healthy; the unsolicited
+persistence was the trigger.
+
+The reliable default is therefore read-only: `tr300`, `report`, fast, ASCII,
+and JSON modes do not call `save_markdown_report`. Users who want an artifact
+make that intent explicit with `-r`/`--report`/`-s`/`--save`. Those flags
+conflict with fast/JSON/actions so the saved document retains the established
+full-table contract. The existing writer is preserved exactly where it matters:
+manual files remain collision-safe, symlink-resistant, flushed, and cleaned on
+incomplete writes.
+
+**Rejected alternatives:**
+
+- Keep auto-save and merely document `--no-save`: a safe managed-machine run
+  should not depend on remembering an opt-out.
+- Remove saving entirely: deliberate support/report workflows still need the
+  Markdown artifact.
+- Detect “corporate antivirus” dynamically: endpoint products and policies are
+  not reliably enumerable, and guessing would reintroduce inconsistent behavior.
+
+### Why endpoint-policy update blocks stop the strategy chain
+
+Self-update necessarily writes a staged installer. A policy product can deny
+directory creation, file writes/sync, or process launch through ordinary I/O
+errors or Windows policy codes. Treating that like a transient strategy failure
+and immediately trying cargo plus multiple installers performs more of the
+activity the endpoint just rejected and can compound a workstation freeze.
+
+v4 classifies likely policy errors as `PolicyBlocked`, records `blocked` in
+human/JSON diagnostics, stops the fallback chain, explicitly cleans staging,
+keeps the current installation, links to official manual downloads, and exits
+2. Failed JSON contains `manual_install_url`; blocked JSON also contains the
+direct `official_releases_url`, so non-interactive callers get the same recovery
+path as terminal users. A verified successful install remains success even if best-effort staging
+cleanup later reports a warning; success is still determined by re-running the
+installed `tr300 --version`.
+
+**Rejected alternatives:**
+
+- Prompt to force a direct running-binary replacement: antivirus can interrupt
+  the overwrite and destroy the only working copy; the user explicitly withdrew
+  this idea.
+- Continue trying other installers: they require the same denied write/launch
+  primitives and increase endpoint noise.
+- Label every I/O failure “antivirus”: unknown failures remain normal failures;
+  only a conservative error set gets the policy-specific label, while all paths
+  still fail without claiming success.
+
+### Recovered gates must block
+
+The macOS ARM test/build/speed jobs were made non-blocking in v3.14.5 after a
+short period of hosted-runner zero-second failures. Subsequent local and hosted
+evidence recovered, and v4.0.0 adds native/Rosetta coverage plus
+substantial Mac-specific behavior. Leaving `continue-on-error` in place would
+turn that evidence into dashboard decoration. The exceptions are removed: a
+red macOS test, release build, or 1.5s speed result blocks CI.
+
+The same rule applies to `cargo audit`. The only known locked advisory was
+resolved by moving `crossbeam-epoch` to 0.9.20; keeping audit advisory-only after
+the graph is clean would allow a new known vulnerability through a release.
+
+Intel hosted CI remains a separate capacity decision: per-commit CI tests Apple
+Silicon, local Rosetta runs exercise the x86_64 binary for v4.0.0, and
+cargo-dist still builds the Intel artifact at tag time. See the existing Intel
+macOS coverage policy below.
+
+### Enforced Developer ID signing and Apple notarization
+
+Auditing the public v3.17.0 arm64 archive showed `Signature=adhoc`, no Team ID,
+Gatekeeper rejection, and no stapled ticket. Local collector testing cannot
+repair a public distribution-trust gap, and an undocumented external setup
+cannot enforce future releases initiated from Windows.
+
+v4.0.0 makes the trust path tracked and fail-closed. In publishing Apple matrix
+jobs, `release.yml` invokes `scripts/sign-notarize-macos.sh` after
+`dist build` and before cargo-dist Post-build/upload. The script uses an
+ephemeral keychain and work directory, imports one Developer ID Application
+identity, resolves exactly one configured match inside that keychain, and signs
+by its certificate fingerprint. This avoids the macOS `codesign` ambiguity that
+occurs when the same certificate display name also exists in the login
+keychain. It signs with stable identifier `com.qubetx.tr300`, hardened runtime,
+and a trusted timestamp; verifies authority, Team ID, identifier, runtime, and
+timestamp; submits the binary to Apple with a least-privilege App Store Connect
+API key; and requires `Accepted`. It then repacks the exact signed bytes,
+regenerates the `.sha256` sidecar, patches the archive checksum in the per-target
+cargo-dist manifest, verifies it, and deletes decoded credentials.
+
+The immutable v4.0.0 tag exposed a clean-runner distinction that a developer
+Mac with the same certificate in its login keychain had masked: importing an
+identity into a newly created keychain does not automatically put that keychain
+on the calling user's search list, and `codesign` requires signing identities to
+be discoverable there even when `--keychain` narrows lookup. The v4.0.0 workflow
+therefore failed closed before upload. v4.0.1 snapshots the original user
+search list, prepends the ephemeral keychain only for `codesign`, restores the
+list immediately and in the cleanup trap, and extracts the embedded leaf
+certificate from the final Mach-O to compare its SHA-1 fingerprint with the
+resolved identity. This keeps fingerprint selection unambiguous while making
+the clean CI environment behave like the proven local environment.
+
+At the v4.0.1 release boundary, repository secrets held the PKCS#12, its
+password, API private key, key ID, and issuer ID; repository variables selected
+the signing identity/team. Only the names were documented, and pull-request
+planning did not receive the values. The v4.3 protected-environment decision at
+lines 1698ff supersedes that storage topology after cutover: release jobs must
+consume Apple credentials only from `apple-signing`, and release is blocked
+until the one-time migration, native ARM/Intel environment-only preflight,
+repository-secret deletion, and migration-workflow removal are proven.
+
+This bare-archive conclusion applied to the v4.0 cargo-dist artifacts and is
+superseded for the installer-first path by the v4.1.0 PKG-in-DMG decision. The
+archives still use Developer ID plus Apple's accepted service record because a
+bare Mach-O has no ticket container. The new PKG and DMG are containers and
+must both be stapled and Gatekeeper-assessed in addition to the nested binary's
+signature verification.
+
+**Rejected alternatives:**
+
+- Manual signing on one Mac after each tag: not enforceable when the maintainer
+  pushes from Windows and easy to forget.
+- Host first and replace assets later: creates a public unsigned window and a
+  race between manifests/checksums.
+- Unsigned fallback when secrets are absent: defeats the stated trust contract.
+- Wrap the CLI in a GUI app solely for stapling: still rejected. A PKG is now
+  accepted for its system-install transaction and stable receipt, not as a
+  cosmetic ticket wrapper.
+
+#### Alienware continuation freeze (historical; superseded by v4.1.0)
+
+The v4.0.1 handoff temporarily froze the proven archive path while work moved
+back to Windows. v4.1.0 intentionally reopens that boundary for a tracked,
+reviewable PKG-in-DMG workflow. Windows remains unsuitable for executing Apple
+signing tools, but it is valid for authoring the workflow, generating the
+Installer CSR/private key, and managing GitHub credentials. Native hosted Mac
+runners now supply the required execution and proof.
+
+A shared or Apple-artifact change still invalidates old Mac evidence, but the
+required revalidation is native `macos-15` plus native `macos-15-intel` hosted
+CI. A physical Mac is needed only for a defect that cannot be observed through
+those runners.
+
+### Post-release personal-hardware evidence boundary
+
+The strongest original plan required personal Alienware, AMD64 Linux laptop,
+and Raspberry Pi 4 evidence before v4.0.0. Those machines were unavailable when
+the maintainer needed the release finished. The maintainer explicitly chose to
+release after comprehensive Mac/local/hosted gates and perform the personal
+matrix afterward, shipping forward patches for real findings.
+
+This is a scope decision, not fabricated evidence. Hosted Windows/Linux jobs
+prove compilation, unit behavior, and runner smokes; they do not prove OEM GPU/
+battery/firmware, personal network, or Pi-specific runtime facts. The task board,
+`TESTING.md`, and handoff keep those rows open. The managed work machine's
+antivirus incident informs report/update side-effect design but is not the
+personal Alienware accuracy test.
+
+**Rejected alternatives:**
+
+- Mark hardware rows waived/passed: false and destroys the evidence ledger.
+- Keep the release indefinitely blocked despite direct maintainer risk
+  acceptance: conflates a product milestone with unavailable lab scheduling.
+- Drop the tasks after release: removes the feedback loop the deferral depends on.
+
+---
+
+## Toolchain & release
+
+### Default branch is `main` (2026-07-17)
+
+**Status:** Accepted, implemented, hosted-verified. This supersedes `master` as
+the live default; historical records that name `master` remain factual for the
+runs and commits they describe.
+
+#### Context and forces
+
+The operator's other repositories use `main`, and explicitly requested the same
+convention here only if CI, crates publication, cargo-dist releases,
+supplemental Windows packaging, Apple trust enforcement, and public deployment
+could be preserved without ambiguity. A branch rename is therefore a release-
+systems decision, not cosmetic repository housekeeping.
+
+Before mutation, the audit established:
+
+- the unchanged default-branch tip was
+  `cd3c179540b48770e1c555cbf60c809d702eb999`;
+- `ci.yml` and `crates-publish.yml` already accepted `main` during transition;
+- `release.yml` publishes only from version-like tags, not from a default-branch
+  name;
+- `windows-installers.yml` follows a successful named Release workflow through
+  `workflow_run`, not `master`;
+- no open pull request, branch protection, ruleset, webhook, or deployment
+  environment visible through GitHub was bound to `master`;
+- release tags, crates.io records, public assets, Apple credentials, and the
+  homepage were separate records that did not need recreation.
+
+#### Decision
+
+1. Use GitHub's supported branch-rename operation to atomically rename
+   `master` to `main` at the same commit. GitHub's
+   [branch-renaming documentation](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/renaming-a-branch)
+   describes the platform-managed redirects and branch metadata behavior this
+   path provides.
+2. Rename the local branch, track `origin/main`, and refresh `origin/HEAD` to
+   `origin/main`. The remote exposes `main` only; do not keep a second live
+   `master` alias.
+3. Narrow live branch filters to `main` only after the atomic rename. A later
+   accidental `master` recreation must not become another CI/crates publication
+   route.
+4. Update canonical release skills, agent guides, project status, testing
+   ledger, handoff, changelogs, and planning documents. Preserve historical
+   `master` references where rewriting them would falsify old evidence.
+5. Deliver release work through a focused, reviewed pull request and merge only
+   after its required checks pass. Hosted enforcement may evolve, but the
+   evidence standard must not depend on adding routine maintainer ceremony.
+
+#### Workflow topology and exact-SHA boundary
+
+The current release topology is:
+
+```text
+reviewed PR merge to main
+  -> exact-current-main CI plus automatic registry-uncredentialed Crates.io Publish waiter
+  -> exact CI success releases the fresh protected OIDC publisher
+  -> explicit stable vX.Y.Z tag
+       -> Release creates a private 24-asset draft
+       -> Windows Installers assembles 30 private assets
+       -> private Windows Installer Validation attests exact bytes/transitions
+       -> macOS Universal Package adds four assets and solely publishes 34
+       -> public updater and published Linux/macOS smokes
+```
+
+The post-rename `workflow_run` crates chain and its already-published 4.0.1 skip
+remain historical evidence for automatic/idempotent ergonomics. crates.io now
+rejects trusted OIDC from `workflow_run`, so v4.3 preserves no-click behavior
+with a supported `main` push trigger whose registry-uncredentialed job waits for exact
+CI success. It also replaces the earlier long-lived-token, same-runner design
+with protected OIDC, exact tested-SHA custody, fresh-runner byte reproduction,
+and post-public provenance adjudication.
+
+Tags remain the only binary-release trigger. A branch/workflow/documentation
+change with unchanged `Cargo.toml` does not justify a version bump, retag, or
+artifact replacement. Creating a new tag merely to “deploy” a branch rename
+would manufacture duplicate product artifacts and unnecessarily rerun Apple and
+Windows release machinery.
+
+#### Actions runtime alignment
+
+The first green `main` runs exposed a non-failing annotation: the remaining
+`actions/checkout@v4` steps targeted deprecated Node 20 and GitHub was forcing
+them onto Node 24. `release.yml` and `windows-installers.yml` already used
+checkout v6 successfully, so leaving CI/crates on v4 created needless runtime
+drift and a future failure risk.
+
+All four workflows now use `actions/checkout@v6`. The
+[official checkout documentation](https://github.com/actions/checkout)
+identifies v6 as the Node 24 release and notes the minimum runner version for
+self-hosted use. TR-300 currently uses GitHub-hosted runners; their actual
+Linux, Apple Silicon, and Windows execution is the decisive compatibility
+proof. If a self-hosted runner is introduced later, its runner version becomes
+an explicit prerequisite rather than an assumption.
+
+The checkout upgrade was deliberately limited to `ci.yml` and
+`crates-publish.yml`; the already-proven generated release workflow and
+hand-authored supplemental Windows workflow were not regenerated or otherwise
+changed. That scope avoids reopening the frozen Mac artifact path for a cleanup
+that provided no Mac benefit.
+
+#### Immutable distribution boundary
+
+The branch and checkout changes do not mutate already-published distribution
+records:
+
+- immutable `v4.0.0` remains the historical failed-closed tag;
+- immutable `v4.0.1` remains at release source
+  `b67ad083503d0fff840af8467015d05c659268ea`;
+- crates.io remains unyanked 4.0.1 with its existing checksum;
+- the GitHub Release remains non-draft/non-prerelease with 28 uploaded,
+  nonempty assets;
+- both public Mac archives retain their exact hashes, Developer ID signature,
+  Team ID, identifier, hardened runtime, timestamp, and Apple `Accepted`
+  submissions;
+- the homepage remains deployed from its own `main` commit
+  `d77397479ad2b1189cce86b5402eaf1cc966abdf`.
+
+Repository Apple secret **names** and non-secret variables can be audited;
+their values must never enter this ADR, git, task memory, or logs.
+
+#### Rejected alternatives
+
+- **Create `main`, push it, change default, then delete `master` manually.**
+  Multiple operations create an avoidable split-brain interval and do not gain
+  anything over GitHub's supported atomic rename/redirect behavior.
+- **Keep both `master` and `main` active.** Two default-like branches invite
+  divergent commits and, if filters drift, duplicate CI or publication paths.
+- **Rename first and assume integrations follow.** Workflow filters, policies,
+  open PR bases, webhooks, environments, local upstreams, release triggers, and
+  raw branch URLs all require explicit audit.
+- **Rewrite every historical `master` mention.** That would falsify release
+  ledgers and old run descriptions rather than improve current instructions.
+- **Ignore checkout v4's Node warning because the run is green.** GitHub's
+  compatibility shim is not a stable contract; waiting converts a known,
+  low-risk maintenance change into a future CI outage.
+- **Leave branch CI on v4 while release workflows use v6.** Mixed action
+  runtimes make pre-tag validation less representative of release automation.
+- **Regenerate `release.yml` merely to align action versions.** It already used
+  v6, and regeneration risks losing legacy aliases or the protected Apple gate.
+- **Bump or retag 4.0.1 for repository metadata.** No product/package bytes
+  changed; immutable release records should remain immutable.
+
+#### Consequences and operating invariants
+
+- New clones, PR defaults, direct development, and release-source work use
+  `main`. Existing stale clones may need the normal Git upstream rename steps;
+  they must not recreate `origin/master`.
+- `ci.yml` and `crates-publish.yml` remain `main`-only. Release remains tag-
+  triggered, and supplemental Windows packaging remains Release-workflow-
+  triggered.
+- Every workflow uses checkout v6/Node 24. A future action-major change requires
+  official-source review, `actionlint`, exact-SHA hosted execution on all CI
+  operating systems, and a crates workflow proof.
+- Direct pushes to `main` are authorized for this maintainer but never bypass
+  local gates or exact-SHA hosted verification.
+- Branch-only documentation commits legitimately trigger the crates workflow;
+  already-published versions must exit successfully through the pre-token skip.
+- Any future branch rename, new deployment integration, ruleset, self-hosted
+  runner, changed workflow name, or trigger redesign requires reopening this
+  decision and auditing the complete chain.
+
+#### Verification evidence
+
+- Migration commit `41c30b1e43f8abc5208f0d94702ed12cd91fb7a7`:
+  CI 29557626125 passed all 13 jobs; exact-SHA crates run 29557758673 safely
+  skipped existing 4.0.1.
+- Migration attestation `bc936ad8450cc4c85b07dfadff0dbe5761ebb237`:
+  CI 29558048158 passed all 13 jobs; crates run 29558195163 safely skipped.
+- Checkout-v6 commit `1714d1fc0b90475d5f0aa590b1ec7d93b24d2eee`:
+  CI 29559148638 passed all 13 jobs with zero check annotations and no
+  checkout-v4/Node-20 log match; crates run 29559305341 used v6 and skipped
+  token/check/package/publish access for existing 4.0.1.
+- Tracked final attestation
+  `eb2ce8b362a54b77a8921cd9666e84f69d423b10`: CI 29559379791 passed all
+  13 jobs with zero annotations and no deprecated-checkout log match; crates
+  run 29559541494 repeated the exact-SHA pre-token safe skip.
+- A fresh public clone selected `main` at the final attestation, GitHub's old
+  `/tree/master` URL redirected to `/tree/main`, `origin/HEAD` resolved to
+  `origin/main`, and no remote `master` remained.
+- All four workflows remained active. v4 tags, 28 release assets, crates.io
+  checksum, public Mac signature/notary evidence, and production homepage
+  bundle/wrappers were re-audited unchanged.
+- Architecture-ledger backfill
+  `e38fe2abcffdf6f85d4dac1c12dd294f36604a59`: CI 29560970377 passed all 13
+  jobs on the exact commit with zero annotations and no deprecated checkout/
+  Node-runtime log match. Crates run 29561137746 checked out the same SHA,
+  found 4.0.1 already published, and skipped registry-token access plus every
+  check/package/publish step. This is the hosted proof for the substantive ADR
+  reconciliation; the follow-up commit only records that proof.
+
+### Stable-only release chain and privileged supplemental provenance (v4.3 candidate)
+
+**Status:** Accepted and release-blocking. PR #15 exact head and its merge on
+exact `main` passed the implementation, workflow, provenance, and native
+fixture gates. The v4.3.0 through v4.3.8 crates/tags are immutable; the reviewed
+v4.3.9 exact SHA and tagged end-to-end chain remain required before complete
+GitHub publication.
+
+Cargo-dist's generic generated workflow recognizes prerelease and alternate tag
+shapes, but TR-300 publishes one crate plus a coupled 34-asset native installer
+chain. That chain is stable-only: crates publication deliberately excludes
+prereleases, and Windows Installer's `ProductVersion` contract accepts only a
+bounded numeric version rather than a SemVer suffix. See Microsoft's
+[ProductVersion property](https://learn.microsoft.com/en-us/windows/win32/msi/productversion)
+contract. Allowing a tag that only some publishers understand would create a
+partial public release, not a release candidate.
+
+The checked-in generated workflow therefore retains cargo-dist's broad trigger
+but adds a project override as the first plan step: a push tag must match exact
+stable `vX.Y.Z` syntax or fail before checkout, dist planning, artifact building,
+or hosting. Pull-request plan behavior remains available. Workflow-level
+permissions are read-only; only the tag-only host job receives `contents: write`.
+Regeneration must preserve both controls alongside the managed aliases and
+fail-closed Apple signing/notarization customization.
+
+The immutable v4.3.0 tag exposed one pre-tag coverage gap: the official pinned
+cargo-dist PowerShell installer deliberately gives `dist.exe` a
+`cargo-dist.exe` hard-linked alias, so PowerShell reports `LinkType=HardLink`
+for the valid executable. A generic nonempty-`LinkType` rejection therefore
+made the Windows release build fail deterministically after a successful tool
+install, before draft creation. v4.3.1 fixes forward without moving that tag.
+Release and ordinary Windows Server 2022 CI now execute one shared pinned
+bootstrap. It requires a leaf and rejects the filesystem `ReparsePoint`
+attribute (symbolic-link/junction redirection), but accepts an ordinary NTFS
+hard link, which is still a regular file. Any future Windows bootstrap change
+must pass that live pre-tag job as well as the structural provenance fixture.
+
+The immutable v4.3.1 tag then exposed a separate native-Apple compatibility
+gap. Release planning and all six platform builds passed, but both fresh Apple
+signers run the host's `/bin/bash` 3.2; their Bash-4-only `declare -A` and
+`mapfile` inventory logic failed before signing, upload, or draft creation.
+Several downstream native installer jobs contained the same latent constructs.
+v4.3.2 fixes forward without moving either earlier tag. Every inline block in
+the native signer, installer-input preparation, credential preflight, build,
+validation, and legacy-bridge jobs must parse under system Bash 3.2. Those jobs
+must not depend on associative arrays, `mapfile`, or `readarray`. Exact file
+inventories instead use Python standard-library `os.scandir`, non-following
+metadata, regular-file checks, and exact expected-name sets. Both native Mac CI
+legs assert Bash 3.2, syntax-check all affected inline blocks and classified
+tag-only build-matrix Bash blocks, execute the exact checkout-free signer
+staging for both targets, and run each exact installer inventory with positive
+and fail-closed fixtures before a tag is eligible. Installing a newer shell in the
+signer or checking out a helper beside credentials is rejected: both would
+weaken the runtime and source-custody proof.
+
+The immutable v4.3.2 tag exposed a third deterministic producer-contract gap.
+Pinned cargo-dist 0.31.0 writes each raw checksum record, and its aggregate
+`sha256.sum`, with a blank line after the final record. The new Apple guard had
+modeled one LF and therefore rejected valid unsigned archives before credential
+use; the later 24-asset preparation had the same latent assumption for raw
+source/Linux/Windows sidecars. v4.3.3 fixes forward without moving any prior
+tag. Fresh Apple signers require the exact raw two-LF bytes. The uncredentialed
+asset-preparation job validates all six remaining raw sidecars, both canonical
+signed-Apple sidecars, and the exact eight-record aggregate before performing
+any rewrite; only then does it canonicalize public sidecars and `sha256.sum` to
+one terminal LF. Manifests continue to bind payload hashes, and the prepared
+artifact digest plus `__tr300-asset-sha256s` bind the canonicalized public bytes.
+Extracted-workflow fixtures cover producer-accurate success, newline/CRLF and
+same-length trailing-byte mutations, aggregate drift, and no-mutation rejection.
+
+The immutable v4.3.3 tag exposed the next exact producer-contract boundary.
+Pinned cargo-dist preserves full Unix `st_mode` values in tar headers, so the
+safe root, executable, and documentation members arrive as `040755`,
+`0100755`, and `0100644`; the custom extractor had accepted only permission-
+only `0755`/`0644`. v4.3.4 fixes forward without moving any prior tag. Both
+Apple extraction boundaries accept exactly the permission-only form or the
+same permission bits combined with the matching `S_IFDIR`/`S_IFREG` type.
+They do not merely mask the field: mismatched embedded types, setuid/setgid/
+sticky bits, incorrect permissions, links, traversal, unexpected members, and
+oversized expansion remain rejected. Extracted-workflow fixtures synthesize
+the real raw headers, retain a permission-only compatibility case, and reject
+type confusion plus special permissions before credential use.
+
+The immutable v4.3.4 tag proved that tar-mode repair end to end: Release
+`32821575317` passed its plan, all six platform builds, both fresh Apple
+signer/notary jobs, and global artifacts. Its uncredentialed 24-asset
+preparation then failed before upload because jq predicate context replaced
+the cargo-dist plan object with a boolean and the next field lookup indexed
+that boolean. Hosting and all downstream workflows skipped, and no draft was
+created. v4.3.5 fixes forward without moving any prior tag and preserves the
+validated manifest object while testing its metadata fields.
+
+The immutable v4.3.5 tag proved that repair and advanced the chain through
+creation of exact private 24-asset draft `376242296`. Release `32824925889`
+then failed in host verification because GitHub's by-tag Release endpoint does
+not expose drafts and returned 404 for the newly created draft. Announcement
+and all downstream workflows skipped; the draft remains private. v4.3.6 fixes
+forward by carrying and validating the immutable release ID returned at draft
+creation rather than rediscovering the private object through a public-only
+lookup.
+
+The immutable v4.3.6 tag proved that numeric-ID repair. PR #23 head `ebb4f76a`
+passed Release plan `32829236145` and CI `32829236226`, then merged as exact
+source `9ab392f4`. Exact-main CI `32830286853`, automatic trusted-OIDC crates
+run `32830286932`, and native credential preflight `32830369613` passed.
+Release `32831292249` then passed all six builds, both fresh Apple signers,
+global assembly, and exact 24-asset preparation. Host job `97751759346`
+created and validated exact private draft `376283574`, but the final managed-
+installer digest lookup expected awk field two to be `*tr300-installer.sh`.
+The same workflow had generated the checksum inventory with default GNU
+`sha256sum`, whose field two is `tr300-installer.sh`; the lookup was therefore
+empty and its 64-hex guard failed. Announcement and all downstream workflows
+skipped, and the draft remains private. v4.3.7 fixes only that deterministic
+producer/consumer mismatch while preserving the exact draft and asset guards.
+
+The immutable v4.3.7 tag proved that checksum repair. PR #24 head `eebce78c`
+passed Release plan `32833632174` and all 20 CI jobs in `32833632116`, then
+merged as exact source `b9aa12850720b49c120c6465cefd094a843c5fc4`.
+Exact-main CI `32834399658`, automatic
+trusted-OIDC crates run `32834399800`, and native preflight `32835377627`
+passed. Release `32835470143` passed all 13 jobs and created exact private
+24-asset draft `376309349`. Automatic Windows run `32835918254` and macOS run
+`32835918239` then failed in their first source-custody jobs. Their read-only
+tokens lack push access, and GitHub only exposes draft releases to callers with
+push access, so the otherwise-correct paginated resolvers deterministically
+received zero matching drafts. All downstream build/publication jobs skipped;
+the exact draft remains private. v4.3.8 fixed forward without moving that tag:
+private-draft discovery and rebinding must occur in a narrowly scoped trusted
+publisher boundary while downstream builders remain read-only and the complete
+PR-to-main-to-OIDC-to-tag-to-34-asset chain stays automatic.
+
+The immutable v4.3.8 tag proved that private-draft visibility repair. Exact
+main and tag resolve to `0b726a854666ed73e42fda675645a097fa887824`;
+exact-main CI `32842065507` passed 20/20, automatic trusted-OIDC run
+`32842065501` published unyanked v4.3.8 with checksum
+`f54d59c8ed3e9b02df7da0c412b079262c3f46292bd400432371875ad0b5c535`,
+and native preflight `32842865442` passed. Release `32842969776` passed all 13
+jobs and created exact private 24-asset draft `376357745`. Automatic macOS run
+`32843468883` bound and froze the exact source, then uncredentialed prepare job
+`97787965884` rejected the freezer's intentional six-file Apple/source artifact
+against its obsolete four-file archive-only inventory. Automatic Windows run
+`32843468892` failed in build job `97787896541` when `gh release verify-asset`
+in `Install the pinned official Inno Setup 6.7.3` had no `GH_TOKEN` after
+build-job hardening. Both publishers skipped; the draft stayed private at
+exactly 24 assets and nothing became public. v4.3.9 fixes forward without
+moving that tag: the Apple producer and consumer enforce one six-file contract,
+and read-only `github.token` is restored only where the pinned Inno attestation
+check requires it, then removed and verified absent before the third-party
+installer launch. No checked-out build job receives Release mutation access.
+
+Privileged supplemental workflows accept automatic input only from the exact
+successful same-repository run named in their contract. They resolve lightweight
+or annotated tags through the Git object API, require the resulting commit to
+equal the upstream `head_sha` and current protected `main`, and require the
+GitHub Release's 40-character `target_commitish` to equal that commit before
+repository checkout, Apple-secret use, or any Release mutation. A no-checkout
+resolver or byte freezer may hold `contents: write` solely because GitHub
+requires push access to enumerate, bind, and download a private draft; it
+executes no repository, installer, or package code. Manual recovery is limited
+to repository owner actor
+`30877743` on the current `main` workflow SHA and requires explicit upstream run
+IDs. The hosted environments independently enforce these protected-ref
+policies: `crates-io` admits only `main`; `apple-signing` admits `main` and
+immutable `v*` tags; and `release-publishing` admits `main` and immutable `v*`
+tags.
+
+Publication is draft-first. The fresh, checkout-free Release host consumes one
+fixed internal artifact by immutable ID and SHA-256 digest, rebinds the stable
+tag, current `main`, and exact successful CI immediately before its only write,
+and creates a private 24-asset draft. It does not execute cargo-dist, repository
+scripts, or package code with `contents: write`. The Windows supplement first
+uses a no-checkout `contents: write` resolver only to authenticate and bind the
+exact private draft. Its checked-out build then runs under `contents: read`,
+uploads exactly three installers plus three checksum sidecars as one immutable
+Actions artifact, and passes mutation custody to a fresh checkout-free
+publisher. That publisher revalidates artifact ID/digest, source/run custody,
+current `main`, CI, and the exact private draft, then adds six literal
+collision-free paths. The draft now has 30 assets and remains private.
+
+The prepared 24-asset artifact is also the managed-wrapper source of truth. Its
+private checksum manifest binds each public wrapper, raw cargo-dist script, and
+per-architecture archive. Each rendered wrapper embeds its corresponding raw
+script digest, and native transition tests snapshot the wrapper/raw/archive API
+records (including asset IDs, sizes, and digests) before execution and require
+the identical records afterward. Historical v4.2.2 transition fixtures use
+hardcoded public byte pins plus the same record sandwich; candidate fixtures
+derive their pins only from the exact source artifact.
+
+Windows installer acceptance happens before public visibility. A workflow run
+triggered by the exact Windows Installers completion snapshots all 30 Release
+assets, requiring each API asset ID, size, and `sha256:` digest to match the
+downloaded byte, and proves the six supplement bytes equal the builder's exact
+internal artifact. Its fresh no-checkout resolver/freezer uses push-capable
+`contents` access only for that private-draft read/download; it uploads the
+normalized set as one immutable validation input so every read-only disposable
+Windows matrix job tests the same bytes. Before the
+candidate is public, updater probes must continue to see the prior public
+`/releases/latest`; candidate transitions use only authenticated exact draft
+installers. A successful matrix emits a fixed proof binding tag/source, Windows
+run and attempt, builder artifact ID/digest, validation input artifact
+ID/digest, validation run and attempt, and all 30 Release asset records.
+
+The macOS workflow establishes Apple archive input custody before any Apple
+credential is present. Its credential preflight and signer are fresh
+`apple-signing` runners with no source checkout or repository-script execution;
+they accept only fixed data artifacts and use inline system tools. The sole
+fresh checkout-free finalizer independently binds its four PKG/DMG files, the
+Windows builder artifact, and exactly one successful Windows Installer
+Validation workflow ID/name/path/event/repository/SHA/attempt plus its immutable
+proof. It re-downloads and hashes the current 30 draft bytes against that proof,
+adds four literal paths, requires the exact 34-asset inventory and checksum
+graph, then rebinds tag/current-main/CI/run/artifacts/draft immediately before
+changing only `draft` visibility. A failed upload leaves a private draft. A
+lost PATCH response is adjudicated by a fresh authoritative Release GET and
+byte/digest comparison rather than blind retry.
+
+For a tagged `workflow_run` or recovery dispatch, the macOS resolver queries
+protected `main` and requires the downstream workflow-code SHA, current remote
+main, and resolved tag source SHA to be identical before it emits any custody or
+build output. Its fresh no-checkout `contents: write` token exists only so the
+resolver can enumerate and bind the exact private draft; later source-custody,
+build, and candidate-execution jobs are read-only. This check occurs before the
+`apple-signing` preflight/build jobs can receive credentials. Tagless credential
+preflight remains bound to the current protected-main SHA. Default-branch
+workflow code is therefore never implicitly trusted merely because an upstream
+tagged run succeeded.
+
+After publication, Windows Installer Validation runs again from the successful
+macOS finalizer and performs the real `/releases/latest` updater matrix against
+the now-public candidate. The published managed-Linux and legacy-macOS bridge
+smokes likewise run only after visibility changes. These post-public runs gate
+homepage deployment and final release closure; they are never used to justify
+the earlier private-draft acceptance.
+
+Raw event and dispatch values enter resolver shells only through environment
+variables and are validated before use. Executable regression fixtures extract
+and run the actual checked-in resolver blocks against mocked GitHub API results,
+covering lightweight and annotated tags, API failure, missing or mismatched
+Release targets, fork/event/SHA mismatch, stable manual recovery, and tagless
+Apple preflight. A future prerelease channel requires a separate architecture
+decision covering crates, MSI version mapping and bounds, macOS package version
+semantics, updater ordering, latest-release behavior, all validators, and the
+complete asset contract; widening one regex is forbidden.
+
+Crates publication starts automatically on a same-repository push to `main`
+because crates.io trusted OIDC accepts `push` but rejects `workflow_run`. A
+read-only job with no registry credential polls for that exact SHA's `CI` push
+run, then re-fetches and validates its workflow ID, path, event, repository,
+branch, run attempt, SHA, and successful conclusion. It binds current `main`
+before and after that proof, then performs locked verification plus a default-verifying
+package/publish dry run with Cargo 1.95. A fresh `crates-io` environment runner
+checks out only that exact SHA with read-only GitHub authorization and persisted
+checkout credentials disabled, rejects symlinks, special or
+multiply linked inputs, unsafe Cargo configuration/manifest paths, and archive
+identity drift, then deterministically repackages from an empty private working
+directory under `env -i`. Only after its crate hash equals the validator's does
+the pinned crates.io authentication action mint a short-lived OIDC token. The
+token-bearing step runs only absolute Cargo `publish --locked --no-verify`; a
+separate post-publication step, after the OIDC token is removed, requires
+crates.io checksum and `trustpub_data` to bind
+the public crate to this repository, source SHA, and GitHub run.
+
+The one-time cutover configured the exact crates.io publisher tuple, proved
+OIDC, and enabled `trustpub_only`. Steady-state workflow code contains no
+bootstrap operation or reusable-token reference; the optional OIDC probe is
+diagnostics only. Retire the now-unused legacy token and GitHub secret after the
+first automatic publication proves the no-click path, so the cutover cannot
+interrupt a release. Routine publication fails closed unless public
+`trustpub_only == true`.
+
+Hosted tag enforcement recorded on 2026-08-24 is part of this decision:
+tag-creation ruleset `21268058` permits actor `30877743` to create `v*`, and
+immutable-tag ruleset `21268059` blocks every `v*` update and deletion. The
+same-day main-only PR ruleset was removed because it added maintainer ceremony
+beyond the requested release workflow; reviewed PRs and green CI remain the
+release procedure without a new mandatory approval mechanism.
+
+### Privileged package launch and rollback boundaries (v4.3 candidate)
+
+**Status:** Accepted and release-blocking; native Windows plus Intel and Apple
+Silicon hosted validation must pass on the exact release candidate.
+
+Windows package execution is a privilege boundary, not an ordinary PATH or
+current-directory lookup. The Global update worker and Inno installer may cross
+UAC, and the managed wrapper may request elevation for an exact machine-wide
+product. Every shipped MSI launch therefore resolves `msiexec.exe` from the
+Windows system-directory API or Inno's `{sys}` expansion, passes the absolute
+executable to the process API, and uses that same OS-owned directory as the
+child working directory. `ShellExecuteExW` pins the elevated worker to the
+validated `tr300.exe` parent; downloaded Inno installers run from their private
+staging parent; recognized Inno uninstallers run from their already validated
+absolute parent. Corporate per-user removal stays unelevated and Global removal
+keeps its existing `RunAs` boundary. Tests place hostile `msiexec.exe` and
+installer names in the current directory and `PATH`, then assert the program,
+arguments, working directory, wait/hidden behavior, and elevation at the real
+launch wrappers.
+
+The native macOS PKG has a different privilege problem: Installer scripts run
+as root while the managed Cargo binary and receipt live in user-owned
+directories. A pathname re-check followed by `cp` is not a transaction; the
+user can replace a parent directory or final component between operations, and
+package-script failure does not prove that Apple's payload or the prior managed
+state rolled back. The PKG now embeds a signed universal C helper. It walks the
+absolute home and managed subdirectories without following symlinks, binds
+directory and file identities through descriptors, rejects unexpected owner,
+type, size, link count, executable mode, or immutable/append flags, and runs
+only the strict Rust dry-run with dropped user credentials.
+
+When takeover is safe, both managed names move to random exclusive siblings
+inside their already-bound directories. Commit unlinks only identities that
+still match. Any pre-commit failure reconstructs the canonical pair from
+anonymous descriptor-bound snapshots through exclusive siblings and atomic
+`renameat`; on macOS, descriptor-based metadata copying preserves ownership,
+mode, ACLs, extended attributes, and safe file flags as well as size-bounded
+data. The helper never runs the old path-based mutating cleanup as root. Its
+fixture covers in-place change during dry-run, symlink substitution, directory
+rebinding, signals, staged-inode mutation/deletion, hardlinks, and successful
+commit, with native ACL/xattr/flag checks when those facilities are present.
+
+Rejected alternatives are a bare executable name, `Get-Command`/PATH lookup,
+PowerShell quoting as the elevation boundary, a root call back into the
+path-based Rust mutation, and shell `cp`/trap rollback. Each either leaves an
+attacker-controlled resolution step or cannot prove restoration after a race.
+Revalidate this decision when the Windows process boundary, MSI scope, managed
+receipt paths, macOS user-home selection, package-script timing, supported
+macOS floor, or preserved metadata set changes.
+
+#### v4.3 supersession: reject managed ownership before macOS payload placement
+
+**Status:** Accepted and release-blocking. This supersedes the descriptor-bound
+PKG takeover helper above; the earlier text remains as the implemented v4.2.2
+design and as evidence for why the stronger boundary was required.
+
+Native Apple Silicon and Intel hosted runs proved that an Apple Installer
+transaction can leave `/usr/local/bin/tr300` behind after an intentionally
+failing `postinstall`, even when the helper restores the old managed binary and
+receipt byte-for-byte. A descriptor-safe rollback of user state cannot provide
+atomicity for PackageKit's separately committed payload or receipt, nor can it
+cover termination between package phases. The safe transaction boundary is
+therefore before payload placement.
+
+The v4.3 direct PKG has exactly one package script, `preinstall`. It examines
+the standard managed binary and receipt paths (`~/.cargo/bin/tr300` and
+`~/.config/tr300/tr300-receipt.json`) in every `/Users` home, including
+dot-prefixed unregistered residue, plus local Directory Service homes without
+relying on console identity or inherited `sudo` variables. Before a fixed child
+is treated as absent, the script proves `/Users` itself enumerable, then
+enumerates the home and each present `.cargo/bin`
+or `.config/tr300` parent level. A symlinked, non-directory, permission-denied,
+or I/O-failed root/intermediate blocks the PKG; this is fixed-depth inspection, not a
+recursive traversal. Fixed ASCII components are matched case-insensitively:
+that follows default APFS/HFS+ resolution and deliberately over-blocks a case
+variant on a case-sensitive volume. Zero matches is proven absence, exactly one
+may be inspected, and multiple folded matches are blocking ambiguity. It validates `dscl -plist` output with the long-standing
+`plutil -lint` contract, then reads the escaped attribute's sole array value
+with `/usr/libexec/PlistBuddy`; typed `plutil` extraction flags introduced in
+macOS 12 are forbidden so the package retains its older Intel/Big Sur support.
+PlistBuddy output is captured with a non-newline sentinel and assigned through a
+function-global result after removing exactly its one record terminator; callers
+do not nest another command substitution. Thus a newline belonging to the
+Directory Service value survives into the one-line home validation and blocks
+instead of being normalized into a different path.
+It requires one exact absolute existing home for every normal human-range
+record (UID 501–4294967295); UID 0 and negative sentinels are excluded, while
+safely resolvable positive lower-UID homes are scanned defensively and
+deduplicated. This uses the complete unsigned 32-bit width: Apple defines Open
+Directory `UniqueID` as a [32-bit identifier](https://developer.apple.com/documentation/opendirectory/general-attribute-types),
+and FSKit exposes file ownership as [`UInt32`](https://developer.apple.com/documentation/fskit/fsitem/attributes/uid).
+Positive values outside that range fail closed rather than being skipped.
+Because that inventory describes the running system, PackageKit's
+target-volume argument must be exactly `/`; an alternate target is rejected
+before payload or receipt placement.
+
+PackageKit cannot infer arbitrary custom Cargo homes, cargo-dist install
+prefixes, or XDG configuration roots from a local account record. Those custom
+locations are outside this refusal inventory; an operator using one must retain
+the managed channel or explicitly retire that owner before launching the PKG.
+
+This mandatory human-account range is an intentional availability tradeoff: a
+missing, offline, or otherwise uninspectable declared home blocks the PKG. The
+operator must make that home inspectable, repair the Directory Service record,
+or retain the managed installer channel; there is no unsafe override.
+Broken symlinks and malformed or partial managed state are conflicts, and the
+script exits nonzero before payload installation. It performs
+no privileged mutation in user homes, ships no migration probe or rollback
+helper, and has no `postinstall`. This is conservative detection, not an atomic
+lock against a separate managed installer started after preinstall.
+
+The refusal path always tells even a runnable managed owner to refresh through
+the managed installer before choosing Complete. That makes the recovery
+sequence safe for older public clients whose Complete uninstall could remove
+the binary but leave a cargo-dist receipt that would make the next PKG attempt
+fail again.
+
+Clean PKG installation, same-version repair, native-to-native upgrade, the
+v4.1.x compatibility-DMG bridge, and exact PKG-to-managed takeover remain
+supported. Managed-to-PKG becomes an explicit three-step transition: refresh or
+reinstall through the managed installer to a receipt-aware version, choose
+Complete uninstall so the exact binary/receipt pair is removed transactionally,
+then run the PKG.
+Malformed, foreign, linked, or concurrently changed receipt evidence fails
+closed and stays available for manual review. Both native architectures must
+prove rejection without payload/receipt mutation and the supported clean
+transition before release.
+
+### MSRV policy (v3.11.1+, addendum v3.13.1)
+
+`rust-version` is pinned in `Cargo.toml` and tracks the GitHub Actions
+`stable` toolchain. As of 3.11.1 it's `1.95` because `std::arch::x86::__cpuid`
+and `std::arch::x86_64::__cpuid` were reclassified as safe-to-call in
+Rust 1.95 (no safety preconditions on x86/x86_64 — CPUID is universally
+available), which made our `unsafe { __cpuid(_) }` wrappers in
+`src/collectors/cpu.rs` and `src/collectors/platform/windows.rs` trip the
+`unused_unsafe` lint. Under our `-D warnings` policy that's a hard build
+error. Bump `rust-version` whenever a new stable lint or stdlib change
+forces source edits — and at the same release pin so that users running
+older toolchains hit cargo's MSRV check, not E0133s deep in collector
+modules.
+
+*Why pin MSRV instead of supporting older Rust via shims:* there are three
+realistic alternatives, and we considered each.
+
+1. **`#[allow(unused_unsafe)]` on every `unsafe { __cpuid(_) }` block.**
+   Compiles on both old and new toolchains. *Rejected* because the `allow`
+   is permanent — once added, even Rust toolchains where the lint is
+   correct (i.e. the unsafe block really is necessary because someone
+   added a genuinely-unsafe call inside it later) will silently swallow
+   the warning and we'd miss real safety regressions. It also bloats every
+   CPUID callsite with attribute noise that has to be re-justified at
+   review time, and it propagates: every future stable lint we want to
+   straddle adds another permanent `allow`. Tech debt that compounds.
+
+2. **`#[cfg(rustc_version)]` ladders to gate per Rust version.** Requires
+   pulling in `rustversion` or `rustc_version` build-script crates, adds a
+   build-time fingerprint to every release, and means our source has two
+   parallel implementations of the same logic — one with `unsafe`, one
+   without — that have to be kept in lockstep. *Rejected* as
+   over-engineering for a tool whose CI deliberately uses
+   `dtolnay/rust-toolchain@stable` and ships from a single toolchain.
+
+3. **Pin MSRV to the CI toolchain (this approach).** Cargo's existing
+   `rust-version` field already enforces this without any source-level
+   shims. Older toolchains get `error: package tr300@3.11.1 cannot be
+   built because it requires rustc 1.95.0 or newer, while the currently
+   active rustc version is 1.94.0` — clear, actionable, and points at
+   exactly the right knob to fix. Combined with auto-rustup in
+   `--update`, users on rustup-managed toolchains never see the error at
+   all because `tr300 --update` brings their stable forward in lockstep
+   with the MSRV pin. Users on distro-managed toolchains see the clear
+   error and can update on their own schedule.
+
+The combination — pin in `Cargo.toml`, auto-rustup in `--update`, README
+mentions `rustup update stable` ahead of `cargo install tr300` — gives us
+a coherent toolchain story across all three install paths (binary
+installer, fresh `cargo install`, self-update) without source-level
+compatibility shims.
+
+**v3.13.1 addendum — `rust-toolchain.toml` is the fourth leg.** `Cargo.toml`'s
+`rust-version` declaration alone is not enough to keep `release.yml` green.
+The release workflow is auto-generated by cargo-dist v0.31.0 (see
+`.github/workflows/release.yml` line 1: `# This file was autogenerated by
+dist`); its only Rust setup is downloading the `dist` binary itself and
+immediately invoking `dist build`. There is no `rustup install` step.
+Each `build-local-artifacts` job uses whatever rustc the
+GitHub-hosted runner image happens to have pre-installed, which on
+`ubuntu-22.04`, `ubuntu-22.04-arm`, and `windows-2022` is currently 1.94.1
+— below MSRV 1.95. The result was that v3.10.0 / v3.12.0 / v3.13.0 all
+tagged but produced no GitHub Release (3/6 build-local-artifacts jobs
+failed; cargo-dist is all-or-nothing).
+
+The fix is `rust-toolchain.toml` at repo root with `[toolchain] channel =
+"1.95"` AND `components = ["rustfmt", "clippy"]`. Rustup is pre-installed
+on every GitHub-hosted runner image, and when cargo runs from a workspace
+containing `rust-toolchain.toml`, the rustup proxy auto-installs the
+pinned channel before delegating to cargo. This works in `release.yml`
+(which never invokes rustup directly), in `ci.yml` (which still calls
+`dtolnay/rust-toolchain@stable` but the `rust-toolchain.toml` override
+wins — same toolchain in CI as in releases, single source of truth), and
+locally for any contributor who clones fresh. See [rustup overrides](https://rust-lang.github.io/rustup/overrides.html)
+for the precedence rules.
+
+The `components = ["rustfmt", "clippy"]` half is non-obvious but
+load-bearing: when rustup processes a `rust-toolchain.toml` that does
+not list components, it installs only the default profile (rustc, cargo,
+rust-std) and *ignores* the `components:` field passed to action-level
+toolchain installers like `dtolnay/rust-toolchain@stable`. The result is
+that the `Format` and `Clippy` CI jobs fail with `error: 'cargo-fmt' is
+not installed for the toolchain '1.95-x86_64-unknown-linux-gnu'` and
+their clippy equivalent. Listing them in the file is the canonical way
+to make rustup install them alongside the channel. Release.yml runners
+get the extra ~few MB download too, which is harmless.
+
+The MSRV is now expressed in **two** places that must move together:
+`Cargo.toml`'s `rust-version` (the cargo-side declaration that produces
+the clear `error: package tr300@X.Y.Z cannot be built because it
+requires rustc N.M ...` message for users on older toolchains) and
+`rust-toolchain.toml`'s `channel` (the rustup-side override that ensures
+GitHub-hosted runners and contributor machines actually pull the right
+toolchain). Future MSRV bumps must update both. Channel choice is a
+minor pin (`"1.95"`, not `"stable"` or `"1.95.0"`): rustup installs the
+latest patch in the 1.95.x line so we benefit from patch releases
+without having to bump for them, but we don't float forward across
+minors silently.
+
+### Self-update auto-rustup (v3.11.1+)
+
+**v4.1.0 superseding rule:** the auto-rustup behavior below remains only for a
+confirmed Cargo origin, and Cargo is pinned to the resolved release with
+`--version <resolved> --force --locked`. The ordered cross-method fallback
+chain described historically below is retired. Shell, PowerShell, MSI, EXE,
+and PKG/DMG origins each have their own single channel-preserving strategy;
+unknown origins do not mutate the machine.
+
+Before v4.1.0, `src/update.rs` checked the same latest-release endpoint,
+compared against `VERSION`, and ran this ordered probe-and-retry chain:
+- `cargo install tr300 --force` first when `cargo --version` succeeds
+- macOS/Linux fallback: cargo-dist shell installer via `curl`, then `wget`
+- Windows fallback: cargo-dist PowerShell installer via `powershell`, then `pwsh`
+
+`--update --json` emits a single JSON object with `current_version`, `latest_version`, `update_available`, and `success`. Success includes legacy `"method"` plus precise `"strategy"`; failure includes an `"attempts"` array. Exit codes: `0` success, `2` failure.
+
+**v3.14.2 addendum — path detection is retired.** Earlier releases inferred the
+update method from the current executable path (`.cargo/.../bin/...` meant
+`cargo install`). That turned out to be the wrong signal once cargo-dist was
+configured with `install-path = "CARGO_HOME"`: the official shell installer can
+also place `tr300` under `.cargo/bin`, so path-based detection could choose
+cargo on machines that do not have cargo installed. The updater now probes
+tools directly and falls through to installer strategies on any preflight or
+runtime failure.
+
+**v3.14.3 addendum — canonical package name is `tr300`.** The crates.io package
+name is lowercase `tr300`, matching the binary and Rust library import path.
+The cargo strategy therefore runs `cargo install tr300 --force`. GitHub Release
+installer assets use `tr300-installer.sh` and `tr300-installer.ps1`; the release
+workflow also copies those files to legacy `tr-300-installer.*` aliases so
+v3.14.2 binaries, whose fallback URL used the deleted old package name, can
+still self-update through the installer path after cargo fails.
+
+**Auto-rustup on the cargo strategy (v3.11.1+).** When the strategy chain tries
+`UpdateStrategy::Cargo` it first calls `rustup_update_stable_best_effort()`,
+which probes for `rustup` on PATH (via `rustup --version`, redirecting both
+stdout and stderr to `Stdio::null()` so the probe is silent) and, if found,
+runs `rustup update stable` and prints `Updating Rust toolchain (rustup
+update stable)…` so the user sees what's happening. Any failure — rustup
+absent, network timeout, locked toolchain, permission error — is *non-fatal*:
+we discard the result with `let _ =` and proceed straight to the
+`cargo install tr300 --force` call. Installer strategies never touch Rust
+because they download a prebuilt binary.
+
+*Why this exists — the failure mode it prevents:* TR-300's MSRV tracks the
+GitHub Actions `stable` toolchain and moves whenever Rust ships a stable
+release that promotes a lint we trigger or changes safety classifications
+on stdlib intrinsics we use (cf. the 1.95 `__cpuid` reclassification that
+prompted this change). Without auto-rustup, a user who installed via
+`cargo install tr300` on Rust 1.94 and then later runs `tr300 --update`
+against a release built with `rust-version = "1.95"` would see cargo print
+`error: rustc 1.94.0 is not supported by the following package: tr300@…
+requires rustc 1.95`, our `execute_update` would propagate that as a
+non-zero exit, and the user would be silently stuck on the stale binary
+forever — they'd assume `--update` "doesn't work" and either give up or
+manually research the toolchain pin themselves. The 5–30 seconds spent on
+a redundant `rustup update stable` (effectively a no-op when already
+current — rustup just prints `info: cleaning up downloads & tmp directories`
+and exits) is dramatically cheaper than that user-experience failure, and
+this pattern means MSRV bumps in future releases stop being a coordination
+problem with users.
+
+*Why best-effort instead of "fail loudly if rustup isn't there":* not every
+user manages Rust through rustup. Distro packages (Debian's `rustc`/`cargo`,
+Homebrew's `rust`, NixOS's nixpkgs Rust), CI environments where rustup is
+intentionally absent, and corporate-managed toolchains all install Rust
+without putting `rustup` on PATH. Hard-failing in those cases would be
+worse than the status quo (we'd block working updates on a tool we don't
+need). Probing first and silently skipping when it's missing means we help
+the rustup majority while not surprising the minority — they just see the
+plain `cargo install` path and any MSRV mismatch surfaces normally, with
+the standard cargo error pointing at `rust-version` so they can update
+their distro/Homebrew Rust on their own terms.
+
+*Why we don't probe rustc version and conditionally call rustup:* the
+naive alternative — parse `rustc --version`, compare against an MSRV
+constant, only run rustup when older — adds two new failure modes (parse
+errors, drift between the constant and `Cargo.toml`'s `rust-version`) and
+saves at most a few seconds. Always running `rustup update stable` is
+simpler, idempotent, and self-correcting; rustup itself decides whether
+work is needed.
+
+### Intel macOS coverage policy (v3.11.2+)
+
+**Current policy (v4.1.0; supersedes the remainder of this historical
+section).** GitHub now exposes the native `macos-15-intel` runner label used by
+this repository. Intel is once again a blocking test/build and PKG-in-DMG
+install gate, paired with native Apple Silicon `macos-15`. Do not remove either
+matrix cell merely because the old `macos-13` public fleet was unreliable. A
+physical Intel Mac and Rosetta emulation are no longer substitutes for the
+native hosted Intel gate.
+
+The following records why Intel was temporarily release-only while
+`macos-13` was the only available label; it is retained as historical failure
+context and is not current instruction.
+
+**What changed.** On 2026-04-28 the `macos-13` matrix entries were removed
+from both the `test` and `build` jobs in `.github/workflows/ci.yml`. CI no
+longer exercises Intel macOS x86_64. The Intel binary continues to ship
+from tag-push releases — `[workspace.metadata.dist].targets` in
+`Cargo.toml` still lists `x86_64-apple-darwin`, and cargo-dist's
+`release.yml` still builds it on a `macos-13` runner at every `vX.Y.Z`
+tag. CI on every commit no longer touches that runner.
+
+**The triggering symptom.** The five CI runs immediately preceding this
+change all stalled exclusively on the two Intel macOS jobs while every
+other matrix cell finished within minutes. Concrete examples (run IDs +
+queue times before manual cancellation): `#25023039347` ("fix(audit):
+migrate users → uzers") sat queued **3h 20m+** before being cancelled to
+unblock the next push, `#25022743655` (v3.11.1 release) cancelled at 7m
+59s, `#25021879374` (docs commit) cancelled at 22m 34s, `#25021109459`
+(v3.11.0 release) cancelled at 18m 41s, and `#24978816648` (v3.10.0
+release) sat for **15h 50m** before cancellation. The repeated workflow
+was: push → wait → realise Intel never picked up → `gh run cancel ...` →
+push next commit, which the `concurrency: cancel-in-progress: true`
+group then auto-cancelled anyway. Hours of latency per push, no Intel
+runtime ever exercised.
+
+**Why it's structural, not a glitch.** `macos-13` is GitHub's last public
+Intel x86_64 macOS hosted runner label. There is no `macos-14`,
+`macos-15`, or `macos-latest` Intel variant — Apple Silicon is the only
+forward path on hosted runners. GitHub has been progressively winding
+down the Intel hosted-fleet capacity through 2025 as Apple Silicon
+became default; on top of that thin baseline, transient incidents like
+the 2026-04-27 16:31 UTC "Actions experiencing degraded performance"
+event push queue depth from "slow" to "indefinite." This is not a
+problem we can wait out — capacity is not coming back.
+
+**Why dropping CI coverage is acceptable for this project.** Apple
+stopped selling Intel Macs in June 2023; the newest hardware Apple
+shipped with an Intel CPU (the 2019 Mac Pro / 2020 Intel iMac /
+MacBook Pro) is roughly three years old by 2026-04-28 and falling out
+of macOS support tiers release-over-release. Critically, dropping Intel
+*CI* does not mean dropping Intel *correctness coverage*: the
+`#[cfg(target_os = "macos")]` gates in `src/collectors/platform/macos.rs`
+are arch-agnostic, so Apple Silicon CI exercises every line of the
+macOS path. The only thing ARM CI doesn't catch is genuinely
+arch-specific behavior, of which TR-300's macOS path has effectively
+none — no inline asm, `format_bytes()` and the table renderer are
+arch-agnostic, sysinfo's `System` API hides arch internally, and the
+`sysctl`/`scutil`/`pmset`/`ioreg` subprocess calls produce identical
+output regardless of CPU. The accuracy delta from losing Intel CI
+coverage is close to zero in practice, and any drift would show up at
+tag-push time when cargo-dist builds the Intel target anyway.
+
+**Why not just `continue-on-error: true` on the Intel matrix entry.**
+Considered. Rejected because it leaves the queued-3-hours-and-then-
+cancel UX intact for every push: the workflow's overall conclusion
+would be `success`, but the dashboard would still show two perpetually
+pending cells, and the run wouldn't be considered "complete" until
+either the runner finally picked up (rare) or `cancel-in-progress`
+killed it on the next push. That's theatrical coverage — the user
+experience is identical to the current pain. Hard removal is the only
+fix that actually changes the dashboard state.
+
+**Why not also drop Intel from cargo-dist's release targets.**
+Considered. Rejected per maintainer direction. Release-time builds run
+on a tag push (cadence: minor/patch releases, ~weekly to monthly), and
+that cadence is willing to absorb a multi-hour Intel queue wait — we
+don't tag releases on a deadline. The cost of keeping
+`x86_64-apple-darwin` in `[workspace.metadata.dist].targets` is one
+extra `macos-13` job per *tag*, not per *commit*. Any user still on
+2019/2020-era Intel hardware deserves a working binary download
+without having to build from source. The contract is: **CI never
+blocks on Intel; releases still produce the artifact.**
+
+**What this implies for future contributors.**
+
+1. Don't re-add `macos-13` to `ci.yml` without a concrete reason and a
+   discussion of capacity risk. The default state is "Intel is not in
+   CI, period."
+2. If GitHub ever ships a hosted Intel macOS replacement label
+   (unlikely), prefer that label over `macos-13` and re-evaluate
+   whether re-adding to CI makes sense at that point.
+3. If `release.yml` starts taking longer than ~2 hours at tag time
+   because of `macos-13` queue depth, *that* is the signal to revisit
+   dropping `x86_64-apple-darwin` from cargo-dist's targets. Until
+   then, releases tolerate the wait.
+4. If a macOS-arch-specific bug is reported by an Intel user, reproduce
+   locally on Intel hardware (or via a one-shot self-hosted runner)
+   rather than re-introducing CI coverage. The bug-rate doesn't justify
+   the queue cost.
+
+**Why "Builds 6 targets" in `## Release Process` still says 6.** Six
+binary targets continue to ship from `release.yml`: Windows x64, macOS
+Intel (x86_64), macOS ARM (aarch64), Linux x64 glibc, Linux x64 musl,
+Linux ARM64. CI tests three of them (Linux x64 glibc, macOS ARM,
+Windows x64). The mismatch between *tested* and *shipped* platforms
+is intentional and is exactly what this section documents — see above.
+
+---
+
+## Windows accuracy patterns
+
+### v3.11.0+ — registry OS, IsWow64Process2, WTS last-login, CPUID hypervisor, BitLocker
+
+- **OS detection** reads `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`
+  directly (`get_os_info_from_registry`) and overrides sysinfo. Detects Win11
+  by `CurrentBuild >= 22000` because the registry `ProductName` is frozen at
+  "Windows 10". Adds `DisplayVersion` (release ID like `25H2`) and `UBR` to the
+  kernel string for richer output.
+- **Architecture detection** (`get_architecture`) calls `IsWow64Process2` via a
+  manual `extern "system"` linked against `kernel32`. Returns the host's
+  native machine even when the binary itself runs under emulation. Handles
+  `IMAGE_FILE_MACHINE_AMD64`, `_ARM64`, `_I386`, `_ARM`. Annotates emulation
+  in the form `aarch64 (x86_64 emulation)` when process arch ≠ host arch.
+- **CPU frequency** (`cpu.rs::collect`) combines CPUID leaf 16h + Windows
+  `CallNtPowerInformation(ProcessorInformation)` + sysinfo, using
+  `Iterator::max`. Leaf 16h returns 0 on Intel hybrid (Meteor/Lunar/Arrow Lake)
+  — that's a documented Intel microcode change, not a bug. Falls through to
+  the next source.
+- **Hypervisor detection** (`detect_virtualization_wmi`) calls
+  `cpuid_hypervisor_brand()` first (CPUID leaf 0x40000000, 12-byte vendor
+  string) and disambiguates the Win11 VBS edge case: if CPUID returns
+  `Microsoft Hv` but the SMBIOS manufacturer is a normal OEM (not Microsoft
+  Corp), the result is `Bare Metal (Hyper-V/VBS)` instead of `Hyper-V`. Real
+  Hyper-V VMs always have Microsoft Corp as manufacturer.
+- **Last-login** (`get_last_login_windows`) calls `WTSQuerySessionInformation`
+  via a manual `extern "system"` linked against `wtsapi32` (the constants
+  `WTS_CURRENT_SESSION = 0xFFFFFFFF`, `WTSLogonTime = 17`,
+  `WTSConnectTime = 14` are declared inline). Falls back to a boot-time
+  derivation from `GetTickCount64` because Windows leaves the WTS time fields
+  at 0 for local console sessions on most modern installs (auto-login + Fast
+  Startup mask the actual logon timestamp). The previous `net user`-based
+  parsing returned localized strings and "Never" — gone.
+- **BitLocker** (`get_bitlocker_status`) queries `Win32_EncryptableVolume` in
+  the `ROOT\CIMV2\Security\MicrosoftVolumeEncryption` namespace via the `wmi`
+  crate's `WMIConnection::with_namespace_path`. Try-and-degrade pattern: on
+  modern Win11 Device Encryption hosts this is readable non-admin and the
+  `ENCRYPTION` row renders; on older Win10 / domain configurations the WMI
+  call returns access-denied → `None` and the row is gracefully omitted; the
+  elevation footer hint covers the unelevated case.
+
+### v3.12.0+ — VPN-aware default-route, Fast Startup uptime annotation
+
+- **VPN-aware default-route detection** (`get_best_route_interface_index` +
+  `get_network_info_wmi`). The historical Windows network collector queried
+  `Win32_NetworkAdapterConfiguration WHERE IPEnabled = TRUE` and picked the
+  first IPv4 address it found — coin-flip behavior on multi-homed hosts and
+  on hosts with active VPN tunnels (Tailscale, WireGuard, OpenVPN, Cisco
+  AnyConnect). v3.12.0 calls `GetBestInterfaceEx` (manual `extern` linked
+  against `iphlpapi`) for `1.1.1.1`; the kernel returns the interface index
+  that *would* carry packets to the public internet right now. We then
+  reorder the WMI result list so that adapter is picked first, falling back
+  transparently to the original first-match logic when the kernel lookup
+  fails (IP Helper service disabled, no default route, etc.). The `winapi`
+  features `iphlpapi`/`ws2def`/`ws2ipdef`/`winerror`/`inaddr`/`in6addr`/
+  `ifdef` were added for this — `SOCKADDR_IN` is declared inline (3 fields,
+  layout-stable since Win95) to keep the surface area minimal. Reference:
+  [GetBestInterfaceEx](https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getbestinterfaceex).
+- **Fast Startup uptime annotation** (`detect_fast_startup` +
+  `last_cold_boot_seconds` in `platform/windows.rs`, threaded through
+  `OsInfo.session_uptime_seconds` and `SystemInfo.uptime_formatted()`).
+  Windows 10/11 default to `HiberbootEnabled = 1` — at "shut down" the
+  kernel session is hibernated to `hiberfil.sys` and resumed at "boot",
+  so `GetTickCount64` (sysinfo's uptime) reports the resumed-session age,
+  while `Win32_OperatingSystem.LastBootUpTime` reports the actual cold-boot
+  time. They diverge by days on a daily-use laptop. The collector probes
+  the registry key `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\
+  Power\HiberbootEnabled` (DWORD), and when enabled AND the WMI cold-boot
+  time is >1h older than the kernel session age, swaps `uptime_seconds` to
+  the cold-boot value AND populates `session_uptime_seconds` with the
+  resumed-session value. The renderer surfaces both as
+  `9d 4h 12m (session: 7h 14m)`. Both values are right; surfacing both
+  avoids the "wait, I restarted three days ago, why does this say 47 days"
+  confusion. The WMI cold-boot query is full-mode-only (~80 ms cost);
+  `--fast` uses sysinfo's uptime exclusively. The CIM datetime field is
+  deserialized via `wmi::WMIDateTime` (the `wmi` crate's serde-aware
+  wrapper around `chrono::DateTime<FixedOffset>`) — manual hand-parsing of
+  the `yyyymmddHHMMSS.mmmmmmsUUU` format is unnecessary and was tried-
+  and-discarded in early v3.12.0 development. References:
+  [Microsoft Q&A: Fast Startup boot time](https://learn.microsoft.com/en-us/answers/questions/1443763/how-to-get-oss-start-time-when-fast-startup-mode-i),
+  [Win32_OperatingSystem](https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-operatingsystem).
+
+### v3.13.0+ — 5-state battery, native cores, GPU registry-prefer, PSCore detection, terminal walk
+
+- **5-state battery awareness via `GetSystemPowerStatus`** (`get_battery_native`
+  in `platform/windows.rs`). Replaces the WMI `Win32_Battery` query (~40 ms,
+  COM round-trip) with a single Win32 API call (~1 ms). The output state
+  machine layered on top is the v3.13.0 user-visible improvement and was
+  expanded mid-implementation (originally a 3-state plan; the user requested
+  better gaming-laptop awareness):
+    1. `BatteryFlag == 0x80` (no system battery — desktops) → `None`, BATTERY
+       row omitted entirely.
+    2. `BatteryLifePercent == 0xFF` (unknown charge) → `None`.
+    3. `BatteryFlag == 0xFF` (unknown state) → `X% (Unknown)` so the user
+       sees something rather than nothing.
+    4. `ACLineStatus == 0xFF` (AC status unknown — rare; some VMs,
+       hypervisor-passthrough batteries) → `X%` with no AC label, since
+       guessing would be misleading.
+    5. On AC + Charging bit set → `X% (Charging)`.
+    6. On AC + percent ≥ 95 + not charging → `AC Power` with NO percentage.
+       The percentage at full charge is uninformative; suppressing it
+       eliminates the v3.11.x output `100% (AC Power)` which was redundant.
+    7. On AC + percent < 95 + not charging → `X% (Plugged in)`. Covers two
+       distinct but indistinguishable scenarios from a single-snapshot API:
+       (a) gaming laptop where peak GPU draw exceeds the AC brick's
+       wattage (Alienware, ROG, Razer with discrete GPUs); (b) firmware-
+       limited charging (ThinkPad / ASUS / Lenovo battery-longevity modes
+       capping at 60-80%). Either way, the percentage matters and we can't
+       distinguish without time-series sampling — the label is honest about
+       the ambiguity.
+    8. Off AC + Critical bit → `X% (Critical)`; Low bit → `X% (Low)`;
+       otherwise → `X% (Discharging)`. Critical/Low take precedence so
+       the urgency is visible.
+  The `BATTERY_FLAG_HIGH` bit (0x01, > 66% charge) is intentionally NOT
+  surfaced as a label suffix — early v3.13.0 testing on a fully-charged
+  laptop on AC produced `100% (Discharging (High))` which was incoherent
+  (charging bit OFF + ACLineStatus=1 + High set is the "fully topped up
+  on AC" case, not "discharging"). The percentage already conveys charge
+  level. Reference:
+  [GetSystemPowerStatus](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getsystempowerstatus).
+- **Native socket count via `GetLogicalProcessorInformationEx`**
+  (`get_socket_count_native` in `platform/windows.rs`). Replaces the
+  `Win32_Processor` WMI count (~30 ms COM round-trip) with the standard
+  two-call buffer-sizing pattern: first call with `Buffer = null_mut`
+  returns FALSE + `ERROR_INSUFFICIENT_BUFFER` and writes
+  `returned_length`; allocate exactly that size and call again. Walks the
+  resulting variable-length `SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX`
+  records by reading the `Size` field at each entry's offset (the records
+  aren't fixed-size — different `Relationship` values pack different
+  payloads). Counts entries with `Relationship == RelationProcessorPackage`.
+  WMI fallback (`get_socket_count_wmi`) retained as a safety net during
+  the C.9 → C.14 transition. Reference:
+  [GetLogicalProcessorInformationEx](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformationex).
+- **GPU enumeration prefers the registry path** (`filter_software_gpus` +
+  the existing `get_gpus_fast` registry walk). The `--fast` mode already
+  used the `{4d36e968-e325-11ce-bfc1-08002be10318}` Display class registry
+  walk because it's COM-free and fast (~5 ms), and it has the additional
+  property that it only enumerates hardware adapters — Microsoft Basic
+  Render Driver, Microsoft Hyper-V Video, and similar software-only
+  adapters don't appear there. Full mode now also prefers it (with WMI /
+  PowerShell as fallbacks), and a `filter_software_gpus()` name-based
+  filter strips known-bad strings as belt-and-suspenders. This is a
+  deliberate simplification of the originally-planned C.8 (full DXGI
+  `IDXGIFactory1::EnumAdapters1` COM enumeration) — the simpler approach
+  achieves the same user-visible outcome (no software adapters in the GPU
+  row) at 25 LOC vs ~100 LOC of unsafe COM. DXGI remains an option if
+  vendor/device-ID filtering ever becomes necessary that name-based
+  filtering can't do.
+- **PowerShell 7+ ("PowerShell Core") detection** (`get_powershell_core_version`
+  in `platform/windows.rs`). The historical `get_shell()` only knew about
+  Windows PowerShell 5.x via `HKLM\SOFTWARE\Microsoft\PowerShell\3\
+  PowerShellEngine\PowerShellVersion`. PowerShell 7+ installs register
+  under a different hive: `HKLM\SOFTWARE\Microsoft\PowerShellCore\
+  InstalledVersions\<GUID>\SemanticVersion`. We do a recursive
+  `reg query /s` and pick the highest `SemanticVersion` value found by
+  string-compare (works for 3-tuple semver since each component fits in
+  2 digits — no zero-padding needed). Falls back to the legacy 5.x
+  detection when no PSCore subkey exists.
+- **Terminal parent-process walk via Toolhelp32**
+  (`detect_terminal_via_parent_walk` + `match_terminal_name` in
+  `platform/windows.rs`). When neither `WT_SESSION` nor `TERM_PROGRAM`
+  nor the new Cursor env vars are set (common when launched from a
+  desktop shortcut, a fresh subshell that lost the parent's environment,
+  or by an AI agent), `get_terminal()` walks the parent-process chain:
+  `CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS)`, then iterate via
+  `Process32FirstW` / `Process32NextW`, build a
+  `HashMap<pid, (parent_pid, name)>`, then climb from `GetCurrentProcessId()`
+  upward (cap 10 levels — defensive against PID-table cycles, which
+  happen in practice on Windows when a parent dies and its PID gets
+  recycled). Recognizes Windows Terminal, WezTerm, Alacritty, VS Code,
+  Cursor, Windsurf, Hyper, Tabby, Ghostty, Kitty, MinTTY, Claude Code,
+  Antigravity. Intermediate hosts (`conhost.exe`, `powershell.exe`,
+  `pwsh.exe`, `cmd.exe`, `bash.exe`, `sh.exe`, `zsh.exe`, `fish.exe`,
+  `nu.exe`, `tr300.exe`, `node.exe`, `python.exe`) are skipped so the
+  walk continues through them; unrecognized exes break the walk silently
+  and the row falls back to `Console`. Verified on this dev host: when
+  TR-300 runs inside Claude Code's Bash tool, the chain
+  `tr300.exe → bash.exe → claude.exe → powershell.exe` correctly
+  resolves to `Claude Code`. Reference:
+  [CreateToolhelp32Snapshot](https://learn.microsoft.com/en-us/windows/win32/api/tlhelp32/nf-tlhelp32-createtoolhelp32snapshot).
+
+### v4.1.0 — Native Windows hybrid-core topology
+
+Windows hybrid-core reporting uses
+`GetLogicalProcessorInformationEx(RelationProcessorCore)` and parses the
+variable-sized processor-core records with byte-bounded iteration. The highest
+observed nonzero `EfficiencyClass` is treated as performance cores and lower
+classes as efficiency cores. If the firmware/OS does not expose useful classes,
+the optional topology remains absent rather than inferring P/E counts from
+logical processor totals or CPU marketing names.
+
+This replaces a gap exposed on the Alienware m16 R2: Windows correctly reported
+16 physical and 22 logical cores, but the older collector could not render the
+Core Ultra 7 155H's `6P + 10E` topology. The same native query is cheap enough
+for full and fast modes and avoids PowerShell/WMI startup overhead. Record-size
+bounds and zero-size guards are load-bearing because the API returns a packed
+buffer rather than a Rust slice.
+
+### v3.14.4+ — Windows install execution-policy preflight
+
+**Failure mode this prevents.** On a fresh Windows machine, `tr300 install`
+wrote a valid alias-plus-auto-run block to
+`Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`, but the next
+PowerShell session immediately errored:
+
+```
+File C:\Users\<user>\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
+cannot be loaded because running scripts is disabled on this system.
+    + FullyQualifiedErrorId : UnauthorizedAccess
+```
+
+Windows Client defaults `ExecutionPolicy` to `Restricted` at both
+`CurrentUser` and `LocalMachine` scopes — and when every scope is
+`Undefined`, scope-precedence resolves to `Restricted` too. `Restricted`
+blocks every `.ps1` file including `$PROFILE` itself, so the auto-run never
+fires on a freshly installed system. The user's prompt-driven `tr300`
+invocations still worked because `tr300.exe` is a native binary on PATH;
+execution policy governs `.ps1` only. The installer was silently failing
+its contract ("auto-run on new interactive shells") because it never
+inspected or adjusted execution policy.
+
+**The fix.** `src/install/windows.rs::run_execution_policy_preflight()`
+runs before the profile write. It calls `Get-ExecutionPolicy -Scope
+CurrentUser`, classifies the result via `policy_state()` into one of
+`{BlockedDefault, BlockedAllSigned, Permissive, Unknown}`, and only acts
+on `BlockedDefault` (`Restricted` / `Undefined`). For that case it runs
+`Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+-Force`, then re-reads the policy to confirm the change took. Three
+outcome branches:
+
+1. **Succeeded** — prints a one-line "Set PowerShell CurrentUser execution
+   policy: <previous> -> RemoteSigned" followed by the "(required to load
+   $PROFILE; only your account, no admin needed)" line, then proceeds with
+   the alias write. Verified on the user's exact failure-mode machine.
+2. **Set-ExecutionPolicy returned 0 but the policy is still blocking**
+   (`TrySetResult::StillBlocked`) — a higher-precedence `MachinePolicy` or
+   `UserPolicy` Group Policy wins scope precedence over `CurrentUser`.
+   Prints a fallback warning to stderr explaining what we tried, what the
+   effective policy still is, and a `LocalMachine`-scope remediation. The
+   alias write half still succeeds; only the auto-run UX is degraded.
+3. **Set-ExecutionPolicy itself failed** — print the same fallback
+   warning with the underlying error message. Same non-fatal posture.
+
+The `BlockedAllSigned` branch never touches `Set-ExecutionPolicy`. It
+prints a notice explaining `AllSigned` blocks the unsigned auto-run
+snippet, offers the user the choice between signing the block themselves
+or relaxing to `RemoteSigned`, and proceeds with the alias write. The
+policy is left alone.
+
+**Why `RemoteSigned` and not other policies.** PowerShell's execution
+policies, strictest to most permissive:
+
+| Policy | Loads our local profile? | Why we don't use it |
+|---|---|---|
+| `Restricted` | ❌ | The default — the bug we're fixing. |
+| `AllSigned` | ❌ (without code-signing the snippet) | Would require shipping an Authenticode cert. Rejected — it expands deploy surface dramatically for a one-user-facing-snippet win. |
+| **`RemoteSigned`** | ✅ | **Minimum policy that loads a local unsigned profile.** Downloaded scripts must still be Authenticode-signed. What we use. |
+| `Unrestricted` | ✅ | Loads downloaded scripts with a confirmation prompt. Strictly more permissive than needed. Rejected. |
+| `Bypass` | ✅ | Loads everything silently with no warnings. Strictly more permissive than needed. Rejected. |
+
+`RemoteSigned` is the policy [Microsoft's own
+documentation](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies)
+recommends for non-server Windows installs and the policy Scoop,
+oh-my-posh, and starship all rely on. Using `Unrestricted` or persistent
+`Bypass` would meet the user's explicit constraint ("not overly
+permissive") with strictly less safety than `RemoteSigned` gives.
+
+**Why `CurrentUser` scope and not `LocalMachine`.** `CurrentUser`
+writes to `HKCU\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell`
+and affects only the current user. It does not require Administrator,
+does not affect other accounts on the machine, and matches the rest of
+`tr300`'s install footprint (which targets `%LOCALAPPDATA%\Programs\tr300`
+and `$PROFILE` — both `CurrentUser` paths). `LocalMachine` would require
+an elevated process and would impose our policy choice on every account
+on the box; we never want that.
+
+**Why verify after `Set-ExecutionPolicy`.** Scope precedence is
+`MachinePolicy > UserPolicy > Process > CurrentUser > LocalMachine`.
+Domain-managed Windows machines can set `MachinePolicy` or `UserPolicy`
+via GPO, and those scopes are read-only from user processes.
+`Set-ExecutionPolicy -Scope CurrentUser` succeeds (exits 0) — it really
+does write the HKCU key — but the *effective* policy seen by the next
+shell is still whatever GPO enforces. Re-reading
+`Get-ExecutionPolicy -Scope CurrentUser` immediately after the set
+confirms whether the change actually took effect under the active scope
+precedence. Without this check, the `StillBlocked` path would be invisible
+and the user would silently get the same `UnauthorizedAccess` error on
+the next shell start.
+
+**Why uninstall doesn't roll back execution policy.** The user's pre-install
+policy is unknown by the time `tr300 uninstall` runs (we don't persist it
+anywhere — that would expand the install footprint to a state file), and
+other PowerShell tooling installed on the same machine — Scoop, oh-my-posh,
+starship, dev module loaders — typically depends on `RemoteSigned` too.
+Reverting to `Restricted` on uninstall would break those tools. Leaving
+the policy alone is the least-surprising behavior. Documented in README.
+
+**Why not write to both Windows PowerShell 5.x and PowerShell 7+
+profiles.** PowerShell 7+ (`pwsh.exe`) uses
+`Documents\PowerShell\Microsoft.PowerShell_profile.ps1`, separate from
+WinPS 5.x's `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`.
+The reporting user was on WinPS 5.x and the current installer only
+targets WinPS 5.x via `powershell.exe -NoProfile -Command "$PROFILE"`,
+so this fix unblocks their case. PowerShell 7+ profile coverage is real
+gap but a separate scope expansion — tracked but not landed here.
+
+**Rejected alternatives.**
+- *Always set `Bypass`* — would meet the user's "minimum" constraint with
+  strictly less safety than `RemoteSigned`. Rejected.
+- *Touch `LocalMachine` instead of `CurrentUser`* — requires admin,
+  affects all users on the box. Rejected.
+- *Skip the preflight, document the failure in README and point users at
+  `Set-ExecutionPolicy`* — every fresh-Windows user runs `tr300 install`
+  and hits the failure mode the very first time; the install command's
+  job is to make the tool work, not to print a workaround. Rejected.
+- *Sign the auto-run snippet ourselves so `AllSigned` works too* —
+  requires Authenticode cert infrastructure, ongoing key rotation, and a
+  release-time signing step. Not worth it for the AllSigned user count.
+- *Write a `.cmd` shim that PowerShell can `Invoke-Item` from a profile
+  that's allowed under `Restricted`* — there is no such profile under
+  `Restricted`. Rejected.
+
+Reference:
+[Microsoft Learn — about_Execution_Policies](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies),
+[Set-ExecutionPolicy](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy).
+
+### v3.14.5+ — Windows install error advisor
+
+**Failure mode this prevents.** Prior to v3.14.5, when `tr300 install` hit
+a permissions error on a work machine — Intune-managed device, Active
+Directory Group Policy lockdown, AppLocker policy, Windows Defender
+Application Control (WDAC), antivirus / EDR write-block, or OneDrive
+Known Folder Move with offline files — the user saw something like:
+
+```
+Error: Platform { message: "Failed to write profile: Access is denied. (os error 5)" }
+```
+
+Two things wrong with that output:
+
+1. The Debug-format wrapper (`Platform { message: "..." }`) is `cargo
+   run`-grade developer output, not user-grade output. `thiserror` has a
+   perfectly good Display impl (`Platform operation failed: ...`) that
+   never gets used because `fn main() -> Result<()>` calls Debug on the
+   error before exiting non-zero.
+2. The message has no remediation. The user is told *what* failed but
+   not *why* it likely failed or *what to do next*. On corporate
+   machines this is the #1 friction point in install adoption — IT
+   doesn't know what to allowlist, and the user has no concrete
+   "give this to IT" path.
+
+**The fix.** Two related changes in `src/install/windows.rs` and
+`src/main.rs`:
+
+1. **`fail_install(InstallStep, &Path, io::Error) -> AppError`** in
+   `src/install/windows.rs`. Every `std::fs` call in install/uninstall
+   now goes through this advisor. It:
+   - Streams a multi-paragraph guidance block to *stderr* —
+     `step.short_description()` → `Path:` + `Cause:` (including the raw
+     Windows error code) → step-and-kind-specific "Likely reasons"
+     paragraph → "Manual `tr300` still works" reassurance closer.
+   - Then returns a concise `AppError::platform("write profile: <io
+     err>")` suitable for `main()`'s trailing summary line.
+   - The rich output is on stderr so it's never swallowed by code that
+     only captures the returned error, and so it interleaves correctly
+     with `main()`'s `Error: ...` line.
+
+2. **Dispatch on `(InstallStep, ErrorKind, raw_os_error, path
+   inspection)`.** The advisor branches on multiple inputs to pick the
+   right remediation paragraph:
+
+   | Condition | Guidance |
+   |---|---|
+   | `PermissionDenied` / Windows error 5, **OneDrive path** | OneDrive-specific: ensure synced, "Always keep on this device", or ask IT to allow OneDrive-folder writes |
+   | `PermissionDenied` / error 5, **redirected (UNC) path** | Network share / folder redirection: check share access, ask IT |
+   | `PermissionDenied` / error 5, **plain local path** | Intune / AD GPO / AppLocker / WDAC / antivirus, with `takeown /F "..." /R` example |
+   | Sharing violation (error 32) | OneDrive sync engine + EDR + open editor as causes; retry |
+   | Storage full / error 112 | Free disk space |
+   | Path too long / error 206 | MAX_PATH overflow; suggest LongPathsEnabled |
+   | NotFound on ReadProfile | Transient race; retry |
+
+   The OneDrive detection uses `looks_like_onedrive_path()`, a
+   case-insensitive segment scan matching both `\OneDrive\` and
+   `\OneDrive - <TenantName>\` (OneDrive-for-Business). False positives
+   on filenames containing "onedrive" are intentional — the
+   user-visible cost is just slightly off-topic advisory text, and
+   keeping the predicate simple is worth more than a perfect filter.
+
+**Why we don't put the rich guidance in the AppError message itself.**
+That would force the message into a single string with embedded
+newlines, which renders poorly in non-terminal consumers (CI logs,
+piped to other tools) and forces a hard coupling between the error type
+and the user-facing UX. Keeping the advisor as a side effect of
+`fail_install()` and the returned `AppError` as a short tag means
+programmatic consumers see a clean `"write profile: <io err>"` and
+human consumers see the rich stderr stream.
+
+**Why dispatch on `path` and not just `ErrorKind` + raw code.** The
+same Windows error 5 has *different remediations* depending on where
+the path lives: OneDrive sync state vs. corporate MDM policy vs.
+locally-mounted volume with weird ACLs. A one-size-fits-all "permission
+denied" paragraph would either be too vague (skip the actionable steps)
+or include OneDrive-specific advice for non-OneDrive paths (confusing).
+Splitting the branch on `looks_like_onedrive_path()` is the cheapest way
+to put the user on the right track.
+
+**Why we never abort install on the execution-policy preflight failure
+but we *do* abort on profile-write failure.** The preflight failure is
+recoverable manually (the alias write still happens; `tr300` keeps
+working as a binary on PATH). The profile-write failure means the
+install genuinely did not complete — there is no alias, there is no
+auto-run. The user needs to know that, with concrete remediation,
+rather than silently continuing.
+
+**Rejected alternatives.**
+- *Put the rich guidance into `AppError::Platform::message`* — turns
+  the message into a multi-line embedded string and couples the error
+  type to the rendering. Rejected.
+- *Use a separate error variant per scenario (e.g. `OneDriveBlocked`,
+  `IntuneBlocked`)* — would require detection logic that doesn't exist
+  (we can't reliably tell Intune from AppLocker from antivirus just
+  from an `io::Error`). The "Likely reasons (most common first)"
+  presentation is honest about that uncertainty. Rejected.
+- *Print only the short error and rely on documentation* — defeats the
+  purpose. The user already has the message in front of them; the
+  guidance should be there too. Rejected.
+Reference:
+[`std::io::ErrorKind`](https://doc.rust-lang.org/std/io/enum.ErrorKind.html),
+[Windows System Error Codes](https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes),
+[OneDrive Known Folder Move](https://learn.microsoft.com/en-us/onedrive/redirect-known-folders),
+[Long Paths in Windows](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation).
+
+### Windows distribution model (v3.15.0+)
+
+The four-product model and permanent identities remain current. The v3.15
+same-edition coexistence and single legacy marker behavior below are
+superseded by v4.1.0: an explicit fresh MSI/EXE removes its same-edition
+counterpart, and scoped Global/Corporate marker values preserve coexisting
+legacy evidence without authorizing cross-channel updates.
+
+**Decision: ship four Windows installer artifacts at every tagged release.** Two MSIs (Global perMachine + Corporate perUser) and two Inno Setup EXE installers (Global perMachine + Corporate perUser). The MSI Global has been shipping since v3.13.1; this release adds the other three.
+
+```
+tr300-x86_64-pc-windows-msvc.msi                   (Global MSI,  perMachine, UAC)
+tr300-x86_64-pc-windows-msvc-corporate.msi         (Corp.  MSI,  perUser,    no UAC)
+tr300-x86_64-pc-windows-msvc-setup.exe             (Global EXE,  perMachine, UAC)
+tr300-x86_64-pc-windows-msvc-corporate-setup.exe   (Corp.  EXE,  perUser,    no UAC)
+```
+
+**Problem this solves.** Before v3.15.0, Windows install required either `cargo install tr300` (which the project's homepage commands wrap with rustup + MSVC Build Tools — a ~5 GB install chain blocked by every managed-device policy I've checked) or the cargo-dist PowerShell installer `irm | iex` (broken under PowerShell `ExecutionPolicy=Restricted` and frequently blocked by AppLocker / WDAC). The only MSI we shipped was perMachine, which requires admin — exactly the cohort of users (managed corp machines) who most need a friction-free install. Result: users couldn't install on the machines that the tool was most useful on.
+
+**Why two MSIs + two EXEs, not a single dual-purpose installer.**
+
+There IS a "single-package authoring" pattern in WiX that produces a dual-purpose MSI which installs perUser by default and perMachine when run elevated (`ALLUSERS=2` + `MSIINSTALLPERUSER=1`). I rejected this approach for two reasons:
+
+1. **[WiX issue #7137](https://github.com/wixtoolset/issues/issues/7137) documents the pattern is fragile in WiX v4/v5** — the upgrade-detection logic doesn't reliably find an existing install of the same product when the scope differs. Real users have reported v1.0.0 perMachine + v1.0.1 perUser ending up with both installed. The two-separate-MSIs-with-different-UpgradeCodes pattern is the industry workaround.
+2. **Different UpgradeCodes are SEMANTICALLY correct.** A perMachine install (everyone on the box sees the binary) and a perUser install (only my account sees it) are different products from the operating system's perspective. Pretending they're one product creates upgrade ambiguity, ARP entry confusion, and uninstall edge cases.
+
+Same reasoning for two EXE installers vs one with a runtime mode switch (`tr300-setup.exe --mode user` vs `--mode admin`). The runtime-switch pattern doesn't actually exist in Inno Setup — `PrivilegesRequired` is a compile-time directive. You'd need two separate `.iss` files anyway; might as well make them obviously separate.
+
+**Why MSI + EXE for the same edition.** End users have well-established preferences. Some prefer `setup.exe` (familiar pattern from decades of Windows desktop apps); others trust `.msi` more (managed IT environments). The marginal cost of building both formats from the same prebuilt `tr300.exe` is small (~80 LOC of Inno Setup script per edition, ~30 LOC of GitHub Actions YAML). The marginal benefit is real: every user gets their preferred format and the install completes.
+
+**Why install both formats to the same path within each edition.** Two alternatives considered:
+
+1. **Same path, originally document "pick one"** (v3.15 choice, superseded in
+   v4.1.0). MSI Global and EXE Global share
+   `C:\Program Files\tr300\bin\`; Corporate formats share their per-user path.
+   v4.1.0 keeps those paths but makes the newly launched installer remove the
+   same-edition counterpart first, so the newest explicit format choice owns
+   the binary, marker, PATH, and Add/Remove Programs registration.
+2. **Distinct paths** (`C:\Program Files\tr300\bin\` for MSI, `C:\Program Files\tr300 (Setup)\bin\` for EXE). Rejected because the suffix is ugly, PATH ordering still picks a winner, and the duplicate-install scenario is rare enough that it's not worth uglifying the common case.
+
+The v3.15 rejection of cross-installer detection is superseded. v4.1.0 uses
+WiX registry search/custom action and Inno's MSI product enumeration to remove
+the counterpart transactionally before installing. Failure stops the fresh
+install instead of merging two registrations.
+
+**The registry markers.** All four installers retain the legacy
+`HKCU\Software\TR300\InstallSource` value and also write one scoped value:
+`InstallSourceGlobal` or `InstallSourceCorporate`. Values remain
+`msi-global`, `msi-corporate`, `exe-global`, or `exe-corporate`.
+`src/update.rs::detect_install_origin()` validates the scoped marker against
+the running path before choosing exactly one in-place update strategy.
+
+Why HKCU and not HKLM:
+- `tr300 update` always runs as the user, who reads HKCU naturally.
+- Writing to HKLM from a perMachine MSI works but requires elevation-aware Component authoring (`Component KeyPath` semantics get awkward with HKLM writes from a perUser-or-perMachine wrapper).
+- The marker is accepted only when its Global/Corporate scope matches the
+  running path, preventing a stale HKCU value from selecting a coexisting
+  install's product.
+
+Marker-free `.cargo\bin` installs are classified only through a matching Cargo
+or cargo-dist receipt, not a probe-and-retry chain. Marker-free Program Files
+and LocalAppData copies recover an origin only when Add/Remove Programs has one
+unambiguous matching registration; otherwise they are `Unknown`. Guessing
+would create a cross-format registration, so the updater performs no mutation.
+
+**Checksum evolution.** v3.15.0 initially trusted HTTPS alone. v3.15.4 added
+SHA-256 sidecar verification before MSI/EXE launch, and later releases retained
+it as a load-bearing corruption/mismatch check. The payload and sidecar share
+one release origin, so this is not an independent signature and must not be
+described as proof against an origin or TLS-interception compromise.
+
+**Why `.github/workflows/windows-installers.yml` uses `workflow_run`.** The
+cargo-dist workflow must create the GitHub Release before supplemental assets
+can attach. A `release: published` event created with the default
+`GITHUB_TOKEN` does not trigger a downstream workflow because of GitHub's loop
+prevention; v3.15.1 exposed that failure. `workflow_run` on successful
+completion of the named Release workflow provides the required sequencing, and
+`workflow_dispatch` remains the repair path.
+
+**Why Inno Setup, not NSIS or WiX Burn.**
+
+- **WiX Burn** would let us produce a bundle.exe that wraps the existing MSI. Considered. Rejected because WiX 3 Burn is finicky (Bundle.wxs syntax is non-trivial, the build pipeline through `candle.exe` + `light.exe` differs from the MSI flow), and the `cargo-wix` CLI doesn't directly support Burn bundles. We'd need to drop down to raw WiX 3 tooling. Inno Setup is one `.iss` file per edition and a single `iscc` command.
+- **NSIS** is also viable but its scripting language is less ergonomic than Inno's Pascal-like syntax, and the resulting installers are slightly larger.
+- **Inno Setup** (chosen) is widely used in the Rust CLI ecosystem (gh CLI,
+  deno, bun, uv all use it on Windows). It is free, mature, well-documented,
+  and its `.iss` files are human-readable and self-contained. The original CI
+  used one `choco install innosetup` line; the v4.3 supply-chain contract
+  supersedes that mutable source with `scripts/install-pinned-inno-setup.ps1`,
+  which downloads the official JRSoftware 6.7.3 asset and verifies exact
+  size/SHA-256, GitHub attestation, Pyrsys B.V. Authenticode identity,
+  ProductVersion, absolute ISCC path, and installed ISCC version before use.
+
+**Why two separate Inno Setup .iss files instead of one parameterized.** Inno Setup supports `#define` and `#if` for compile-time conditionals, so a single file with `#define GLOBAL_OR_CORPORATE` would work. Rejected because: (1) the two files differ in enough ways (PrivilegesRequired, DefaultDirName, PATH registry root, AppId, OutputBaseFilename, Code block contents) that the conditional branches would dominate the file; (2) two files is more obvious to readers; (3) the AppIds are forever-distinct, so the files can't truly share an identity anyway. Duplicate-ish code is fine when the products are genuinely separate.
+
+**Why `install-path = "CARGO_HOME"` is still set in `[workspace.metadata.dist]`.** That setting controls where the cargo-dist PowerShell installer (`tr300-installer.ps1`) places the binary on Windows — `%USERPROFILE%\.cargo\bin\tr300.exe`. The new MSI / EXE installers don't use cargo-dist's installer logic at all; they have their own install paths defined in `wix/*.wxs` and `inno/*.iss`. Leaving the cargo-dist setting alone means the PowerShell installer keeps working for users who prefer it (or for users on platforms without an installer story, like ARM Windows once we add that target).
+
+**SmartScreen / unsigned-binary honest accounting.** All four installers are unsigned. First-time download on Win11 24H2+ triggers "Windows protected your PC" — user clicks **More info → Run anyway**. README documents this; we don't pretend it doesn't happen.
+
+Real options for fixing this (not done in v3.15.0):
+1. **Azure Trusted Signing** (~$10/mo) — Microsoft's EV-equivalent service that gives instant SmartScreen reputation. Requires verified org identity (we'd need to register QubeTX). Likely the right answer long-term.
+2. **OV code-signing cert** (~$80–200/yr) — still requires accumulated download reputation to clear SmartScreen, but reduces "Unknown publisher" friction.
+3. **Document the manual override** (chosen for now) — what BleachBit, Teleport, ScreenToGif, and many other open-source Windows tools do.
+
+**Rejected alternatives.**
+- *Use a single perUser MSI that auto-detects "in admin? install perMachine. Otherwise perUser."* — see WiX #7137 above. Too unreliable.
+- *Drop the perMachine MSI entirely and ship only perUser* — would break IT-managed deployment via Intune / SCCM. Real users need perMachine for managed rollouts.
+- *Ship only one EXE format with a runtime `--user / --machine` switch* — not supported by Inno Setup's `PrivilegesRequired` directive. Would require building two binaries anyway.
+- *Include Windows Authenticode signing in this release* — too much scope.
+  Tracked as future work; this is distinct from v4's Apple Developer ID path.
+- *Submit to WinGet / Scoop in this release* — high-value follow-up, but adds external dependencies (PR review processes). Defer to v3.16.0.
+
+References:
+- [WiX Toolset Issue #7137 — dual-purpose perUser MSI](https://github.com/wixtoolset/issues/issues/7137)
+- [Microsoft Learn — WDAC vs AppLocker overview](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/windows-defender-application-control/wdac-and-applocker-overview)
+- [Microsoft Learn — about_Execution_Policies](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies)
+- [Inno Setup documentation](https://jrsoftware.org/ishelp/)
+- [cargo-wix project README](https://github.com/volks73/cargo-wix)
+- [cargo-dist MSI installer book](https://opensource.axo.dev/cargo-dist/book/installers/msi.html)
+- [Azure Trusted Signing](https://learn.microsoft.com/en-us/azure/trusted-signing/)
+- [Microsoft Learn — Submit packages to WinGet](https://learn.microsoft.com/en-us/windows/package-manager/package/)
+
+#### v3.17.0 addendum — advisory one-install consolidation
+
+**Status:** Historical. Accepted for v3.17.0 through v4.1.x; its installer-facing
+advisory/opt-out behavior is superseded by MIC-1 and the v4.2.0 strict addendum
+below. This decision preserves the load-bearing rationale for `src/migrate.rs`
+and explains why immutable older packages behave differently.
+
+Windows supports Cargo/cargo-dist copies in `~\.cargo\bin`, a Global edition in
+`%ProgramFiles%\tr300\bin`, and a Corporate edition in
+`%LocalAppData%\Programs\tr300\bin`. A user can therefore install a new MSI/EXE
+successfully and still run an older Cargo copy because `.cargo\bin` appears
+earlier on PATH. Global and Corporate editions can also coexist. The updater's
+origin marker prevents guessing the wrong installer for an in-place update, but
+it cannot by itself remove a shadowing executable.
+
+The operator policy was one active TR-300 executable/edition at a time. At that
+time, the four Windows installers owned an **advisory** post-install
+consolidation step through hidden `tr300 migrate-cleanup`:
+
+- interactive installs expose “remove older Cargo copy” and “remove other
+  edition” tasks, both defaulted on;
+- silent self-updates invoke the same cleanup without a prompt, also defaulted
+  on;
+- `--cargo-copy` targets only `~\.cargo\bin\tr300.exe`;
+- `--other-edition` selects the opposite Global/Corporate binary directory;
+- with neither target flag, the command defaults only to the safer Cargo-copy
+  cleanup;
+- `--dry-run`, `--json`, `--quiet`, `--user-profile`, and `--cargo-home` exist
+  for installer integration, diagnosis, and deterministic resolution;
+- macOS/Linux return a clean no-op because their supported methods converge on
+  the same Cargo-home binary location rather than separate editions.
+
+The command removes a shadowing executable, not an entire toolchain, PATH entry,
+Downloads directory, or Add/Remove Programs registration. A stale installer
+registration can be repaired with that product's normal uninstaller; deleting
+unrelated registry/product state inside a post-install helper would broaden the
+risk substantially.
+
+Hard safety invariants bound every deletion:
+
+1. The filename allowlist contains only `tr300`/`tr300.exe`; `cargo.exe`,
+   `rustup.exe`, sibling tools, directories, and arbitrary files cannot match.
+2. The running executable's canonicalized directory is always excluded. A
+   Cargo-installed process cannot delete itself just because Cargo cleanup was
+   requested.
+3. Candidate paths are computed only from Cargo home/user profile or the two
+   edition roots. No candidate is under Downloads.
+4. The helper never edits PATH and never removes `.cargo\bin` itself.
+5. It never elevates. A per-user process that cannot remove a per-machine copy
+   reports `needs admin`, leaves it intact, and continues.
+6. Empty, absent, partial, or needs-admin cleanup remains exit 0 so advisory
+   consolidation cannot roll back or falsely fail a successful installer. Only
+   a true internal inability to establish the running location is nonzero.
+
+Installer context is part of correctness. WiX custom actions are deferred and
+`Impersonate='yes'` so user-profile cleanup runs as the invoking user, and they
+use `FileKey`/`ExeCommand` without adding `WixUtilExtension`. Inno Corporate can
+pass the user profile directly. Inno Global intentionally relies on process
+environment fallback because it has no reliable pre-elevation user-profile
+constant for this purpose. Cargo-home and user-profile overrides win over the
+helper's environment when available.
+
+The edition directory constants and registry marker strings form one lockstep
+across `src/migrate.rs`, `src/update.rs`, `wix/main.wxs`,
+`wix-corporate/corporate.wxs`, and both Inno scripts. Changing an install path
+in only one surface can make cleanup target the wrong edition or make updater
+origin validation reject a legitimate marker.
+
+**Rejected alternatives:**
+
+- **Let PATH precedence decide forever.** Installation can report success while
+  the user continues running the old binary, which is a false update outcome.
+- **Delete the entire Cargo bin directory or remove it from PATH.** It commonly
+  contains cargo, rustup, and unrelated Rust tools; TR-300 has no authority to
+  mutate them.
+- **Run cleanup automatically on every ordinary report.** Reports are read-only
+  by v4 contract, and deleting another install outside explicit installer
+  context would be surprising and endpoint-policy-hostile.
+- **Make cleanup failure fail the installer.** A Corporate user cannot normally
+  remove a Global per-machine copy. The new working install should survive and
+  report the remaining conflict rather than be rolled back.
+- **Elevate automatically to guarantee removal.** That violates the Corporate
+  no-admin purpose and turns a bounded advisory helper into a privilege path.
+- **Guess MSI versus EXE from the install directory.** Both formats share an
+  edition path; the `InstallSource` marker is required for product identity.
+- **Apply the Windows edition model to macOS/Linux.** Those platforms have no
+  Global/Corporate split; a no-op preserves the single cross-platform CLI
+  contract without inventing foreign paths.
+
+**Historical consequences and revalidation:** all four installer interactive and silent
+paths must exercise the same target defaults; pure path/allowlist/outcome tests
+must run on every OS, and live deletion/needs-admin/PATH-shadow tests remain
+part of the personal Alienware matrix. Any Windows install path, marker,
+product scope, custom-action impersonation, binary name, or additional shipped
+binary requires a lockstep migration review. The helper remains hidden and
+incapable of deleting the running install; only its legacy no-`--strict` call
+retains this advisory exit behavior.
+
+##### v4.2.0 strict fresh-installer convergence
+
+**Status:** Accepted for current Windows native packages. The macOS PKG clauses
+below describe the shipped v4.2.2 design and are superseded by the v4.3
+preinstall-only refusal decision above.
+
+MIC-1 distinguishes an ordinary report or legacy diagnostic call from a fresh
+installer the user deliberately launched. On Windows, the latter is
+authoritative channel intent and must not report success while an exact older
+managed/Cargo owner still shadows it. Current MSI and EXE packages therefore:
+
+1. expose no cleanup task or checkbox and always request the bounded targets;
+2. invoke `migrate-cleanup --strict`, where absent/exactly removed targets are
+   success and ambiguous, locked, needs-admin, or failed targets return 2;
+3. prevalidate a present cargo-dist receipt's provider, app, prefix, and
+   platform-correct path case before moving its binary;
+4. quarantine an exact Cargo-path binary in a randomized private sibling
+   directory, remove its matching receipt, and restore the prior pair if the
+   transaction cannot commit;
+5. use the strongest package-native boundary available: WiX deferred
+   impersonated `Return='check'` actions; Inno candidate extraction plus strict
+   non-mutating `PrepareToInstall` preflight before any native change and final
+   `ssPostInstall` convergence after registry/ARP exists (Global runs both with
+   `ExecAsOriginalUser`); and
+6. retain the versionless fresh-installer/release recovery link on every visible
+   stop without guessing a different scope or deleting native registration.
+
+Registered or exact-native-path opposite-scope Windows state is rejected before
+mutation because a Corporate package cannot safely retire a Global product and
+a Global package must not silently erase per-user intent. An unregistered
+opposite-path executable is conflicting evidence, not an orphan license. The
+managed PowerShell wrapper is the
+supported cross-scope convergence transaction: it can request UAC only for the
+exact machine-wide uninstaller after verifying the new managed copy and can
+restore its prior managed snapshot if takeover fails. Same-edition MSI/EXE
+format changes continue through each product's real uninstall identity.
+The managed wrappers restore their snapshot while the native owner is intact.
+After any real native uninstall or package-receipt retirement commits, they
+retain the verified new managed binary/receipt and fail with recovery guidance;
+native registration is never fabricated and a partial external commit never
+becomes a zero-copy rollback.
+
+The earlier rejected alternative “make cleanup failure fail the installer” is
+superseded only inside this explicit fresh-installer boundary. The v3.17 design
+could not yet restore ownership and therefore preferred a usable duplicate to a
+rolled-back package with a deleted Cargo copy. v4.2 adds receipt preflight,
+transactional quarantine/restore, platform package rollback where supported,
+and exact recovery evidence;
+allowing a partial cleanup to return zero would now counterfeit MIC-1 success.
+Legacy calls without `--strict` remain compatible and advisory, but no current
+Windows native package may use them. The current direct macOS PKG uses neither
+mode; it rejects standard-path managed binary or receipt evidence
+non-mutatingly in `preinstall`.
+
+**Revalidation trigger:** any change to a product identity, install scope/path,
+receipt schema/path, custom-action token, Inno execution context, package
+rollback timing, or additional binary requires source guards plus the
+platform's supported transition matrix, cancellation/failure restoration,
+duplicate/PATH, and uninstall evidence. macOS requires managed-conflict
+rejection, managed Complete-uninstall-to-PKG, and PKG-to-managed proof rather
+than an automatic bidirectional takeover claim.
+
+### v3.15.1 addendum — Why corporate.wxs lives in `wix-corporate/`, not `wix/`
+
+v3.15.0's `release.yml` run 25901237669 failed at `build-local-artifacts(x86_64-pc-windows-msvc)` with WiX candle exit code 6. v3.15.0 published to crates.io (it was past the crates-publish stage by then per /release § 10's "tag only after both ci.yml and crates-publish are green") but had no GitHub Release artifacts. v3.15.1 is the fix-forward patch release. Two root causes:
+
+**Root cause 1: `<Property Id='ALLUSERS' Value=''/>` in v3.15.0 `wix/corporate.wxs`.** I'd added this Property because folklore and old WiX 3 examples claim that explicit `ALLUSERS=""` + `MSIINSTALLPERUSER=1` are needed to force a per-user install. WiX 3.11 candle rejects `Value=""` with `CNDL0006: The Property/@Value attribute's value cannot be an empty string` and emits a follow-up `CNDL1006` warning explaining the Property would be ignored anyway. The actual WiX 3 rule: `InstallScope='perUser'` on the Package element is sufficient by itself. The MSI installer treats unset `ALLUSERS` as per-user, which is exactly what we want; declaring it with an empty value is both syntactically rejected by candle AND, even if it parsed, semantically equivalent to not declaring it at all. The v3.15.0 → v3.15.1 fix was to delete both that line and the redundant `MSIINSTALLPERUSER=1` Property.
+
+**Root cause 2: cargo-wix's "compile every `wix/*.wxs` into ONE MSI" default.** Once root cause 1 was fixed, light.exe surfaced `LGHT0089` ("Multiple entry sections '*' and '*'") and a cascade of `LGHT0091/0092` ("Duplicate symbol") errors at the link stage — for `Property:Manufacturer`, `Property:ProductCode`, `Property:ProductLanguage`, `Property:ProductName`, `Property:ProductVersion`, `Property:UpgradeCode`, `Property:DiskPrompt`, `Media:1`, `Directory:APPLICATIONFOLDER`, `Component:binary0`, `Component:Path`, `Component:InstallSourceMarker`. cargo-wix scans `wix/*.wxs` non-recursively and feeds ALL matching files to candle → produces one wixobj per .wxs → light.exe links them ALL into a single output. Two complete Product definitions in the same directory cannot coexist this way; they conflict at every shared symbol.
+
+The fix has two parts: (a) move `corporate.wxs` to a NEW directory `wix-corporate/` so cargo-wix's default scan of `wix/` produces only the Global MSI cleanly. (b) Build the Corporate MSI separately by calling bare `candle.exe` + `light.exe` from `windows-installers.yml`, never through cargo-wix. cargo-wix CLI has `--include <path>` to ADD files but no equivalent "use ONLY this file" flag, so cargo-wix is the wrong tool for compiling one wxs from outside `wix/`.
+
+The bare WiX invocation needs `-sice:ICE38 -sice:ICE64 -sice:ICE91` flags on `light.exe`. Per-user MSIs in WiX 3 want:
+- ICE38: every Component installing to a user-profile directory should have an HKCU RegistryValue as its KeyPath (not a File KeyPath).
+- ICE64: every Directory in the user profile needs a Component with a `RemoveFolder` element so the directory is cleaned up on uninstall.
+- ICE91: WiX warns that per-user files in `[Bin]` won't replicate to other users' profiles even if perMachine was somehow desired (cosmetic).
+
+Making `wix-corporate/corporate.wxs` ICE-clean is a real option, requiring ~5 additional `<Component>` elements per intermediate Directory (each with `<RemoveFolder>` + an `<RegistryValue Root='HKCU'>` KeyPath dummy), changing the existing `Path` and `binary0` Components to add HKCU RegistryValue KeyPaths instead of relying on Environment/File KeyPaths, plus matching `<ComponentRef>` entries in the Feature tree — roughly 40 lines of new WiX boilerplate. Rejected for v3.15.1: the practical impact of suppressing the three ICEs is one empty `%LocalAppData%\Programs\tr300\bin\` folder left in the user profile after uninstall. Install and uninstall both work correctly; PATH modification works; the binary is fully functional. The empty folder is a cosmetic leftover that's acceptable for a CLI tool.
+
+**Verification path used to diagnose this.** Local repro with portable WiX 3.11 binaries from [github.com/wixtoolset/wix3/releases](https://github.com/wixtoolset/wix3/releases/tag/wix3112rtm) (downloaded as `wix311-binaries.zip`, extracted to `/tmp/wix3/`). With cargo-wix installed via `cargo install cargo-wix`, running `cargo wix --no-build --nocapture` against v3.15.0's source surfaced both error classes in sequence — first the CNDL0006 from candle, then (after the Property fix) the LGHT0089/0091 cascade from light.exe trying to link both wixobjs together. cargo-dist's CI invocation suppresses these details by default (it captures candle/light stderr); local reproduction with `--nocapture` was essential.
+
+**Rejected alternative for root cause 2: in-tree wxs file rename.** I considered renaming `wix/corporate.wxs` to `wix/corporate.wxs.bak` in the windows-installers.yml workflow before calling cargo-wix, then restoring. Worked but ugly — the file would be physically renamed at CI runtime, which complicates local builds and confuses git. The directory move (`wix-corporate/`) is structural and explicit.
+
+**Rejected alternative for root cause 1: keep the ALLUSERS Property with a non-empty Value.** WiX docs allow `Value=" "` (single space) as a workaround for the empty-string rule. Tried in an earlier draft; it passes candle but generates a meaningless ALLUSERS Property that doesn't actually affect install scope. The clean answer is to delete the Property entirely.
+
+**Side effect: `Cargo.toml` `include` list gained `/wix-corporate/**`** so the published crate ships with the Corporate WiX source. This is for completeness — the practical Corporate MSI build happens in CI from the Git repo, not from a downloaded crate.
+
+---
+
+## Install / update safety primitives (v3.15.2+)
+
+The v3.15.2 audit + remediation cycle surfaced six related-but-distinct
+"silent failure" classes across the install / update / runtime paths.
+Each shipped as a focused primitive rather than a one-off fix, with the
+explicit intent that future Claude agents see the pattern and reuse it.
+
+### Atomic rc-file writes
+
+**Problem.** `std::fs::write(path, content)` opens the target with
+`O_TRUNC` / `CREATE_ALWAYS` (POSIX / Windows respectively) and then
+writes. If the process dies between truncate and write completion — `Ctrl-C`
+during the install, a power loss, an antivirus quarantining the file
+mid-write, OneDrive deciding to rename the file during the open — the
+target file is left **truncated or partial**. For files the user has
+invested real time in (`~/.bashrc`, `~/.zshrc`, PowerShell `$PROFILE`),
+that loss is silent and irrecoverable.
+
+**Fix.** `src/install/mod.rs::atomic_write(path, content)`:
+1. Write to a sibling temp file (`.<filename>.tr300-tmp`) in the same
+   parent directory.
+2. On Unix, capture an existing resolved target's permissions and apply them
+   to the opened sibling before writing any profile bytes. A private `0600`
+   profile must never be replaced by a broader umask-derived mode.
+3. `sync_all()` to flush to disk.
+4. `std::fs::rename(temp, target)` — atomic on POSIX, atomic on NTFS
+   within a volume.
+
+The temp file in the same parent dir is load-bearing: NTFS guarantees
+atomicity for `MoveFileExW(MOVEFILE_REPLACE_EXISTING)` only when both
+endpoints are on the same volume, and POSIX `rename(2)` has the same
+constraint. Using `std::env::temp_dir()` for the temp would have placed
+it on a different filesystem in the common case and silently degraded
+to non-atomic copy-then-delete.
+
+On any failure path, the temp file is cleaned up with a best-effort
+`fs::remove_file` so we don't leak orphan `.<filename>.tr300-tmp` files.
+
+**Rejected alternative: `tempfile` crate.** The `tempfile::NamedTempFile`
+API does roughly the same dance but with a heavier API surface and an
+additional dependency. For three call sites + a couple test fixtures,
+the hand-rolled ~40 LOC helper wins on transparency and zero added
+deps.
+
+**Rejected alternative: write to `$TEMP` first, then copy.** Works but
+isn't atomic — the copy-then-delete sequence has the same partial-write
+hazard we were trying to avoid, just in a different file. Same-parent
+temp is the only path that gets actual atomicity.
+
+**Companion: `backup_once(path)`.** First install also copies the
+pre-TR-300 contents to `<path>.tr300-backup` if no backup exists yet.
+Idempotent: subsequent installs preserve the ORIGINAL backup. We never
+overwrite a backup with a TR-300-modified version — that would silently
+destroy the user's last good copy.
+
+### Marker-balance pre-check
+
+**Problem.** The `remove_delimited_block` parser (now in
+`src/install/shared.rs`) opens a block on any line containing
+`# TR-300 Machine Report` and closes it on any line containing
+`# End TR-300`. If a user hand-edited `# End TR-300` out of their rc
+file — a real and plausible failure mode when tidying shell config —
+the parser silently sets `in_block = true` on the start marker, never
+sees the close, and drops every subsequent line through EOF.
+
+The user's `~/.bashrc`, gone, on the next `tr300 install`.
+
+**Fix.** `check_marker_balance(content, start, end)` counts lines
+containing each marker. If `count(start) != count(end)`, refuse the
+write up-front with an actionable error explaining how to repair the
+block by hand. All four call sites (`update_shell_profile`,
+`remove_from_profile`, Windows `install_into_profile`, Windows
+`uninstall`) call this before any state mutation.
+
+**Why count instead of "in_block at EOF" check.** Counting also catches
+the inverse case (an orphan `# End TR-300` line on its own — less common
+but possible). And it's an O(n) single-pass over the file we already
+have in memory; no performance concern.
+
+### SHA256 verification of downloaded installers
+
+**Problem.** Pre-v3.15.2 the Windows update path (`src/update.rs`)
+trusted only TLS to `github.com` and immediately handed the downloaded
+MSI / EXE bytes to `msiexec /i` or ran the Inno EXE directly. The
+implicit comment was "we trust the cert chain" — but TR-300's target
+audience is corporate users on machines with TLS-interception proxies
+(Bluecoat, Zscaler, McAfee Web Gateway, etc.) installing a trusted
+root certificate in the user store. Those proxies see plaintext
+HTTPS traffic and can rewrite installer bytes in flight.
+
+The worst case is the Global EXE: Inno Setup binaries declare
+`PrivilegesRequired=admin` at launch, so one UAC click on a tampered
+installer gives the attacker SYSTEM-equivalent code execution on
+every machine that auto-updates.
+
+**Fix.** After `download_to_file`, fetch `{installer_url}.sha256` in a
+SEPARATE request, parse the cargo-dist `<lowercase-64-char-hex>  *<filename>`
+format (also tolerant of the asterisk being absent — some sha256sum
+invocations emit text mode), compute SHA-256 of the downloaded file
+via `sha2::Sha256`, and refuse to launch on mismatch.
+
+**Why this is meaningful uplift even though both requests go through
+the same MITM.** The proxy has to tamper with BOTH the installer AND
+the sidecar in a way that yields a matching hash. SHA-256 is
+preimage-resistant — you can't compute new bytes that hash to a
+specific target value. The attacker would have to either:
+1. Use a hash collision (currently believed-hard for SHA-256 — no
+   published collision attack), or
+2. Rewrite both files in a way that doesn't trigger TLS cert
+   validation on the second connection (rustls won't downgrade or
+   ignore cert errors silently), or
+3. Forge the trusted root and serve their own cert (already in scope
+   if they're MITM-ing, but now they have to do it consistently for
+   two requests instead of one — much higher likelihood of triggering
+   the user's other security tooling).
+
+This isn't code-signing protection (we don't verify a signature; we
+verify a hash that an attacker who controls the proxy in steady state
+could in principle replace alongside the binary). But it raises the
+attack cost meaningfully, and it matches the security posture of
+cargo-dist's own shell installer (`curl ... | sh`), which the
+PowerShell installer one-liner already inherits via cargo-dist.
+
+**Rejected alternative: Windows Authenticode signing.** Would be stronger, but
+acquiring an EV cert and threading signing through release.yml +
+windows-installers.yml is a multi-month project. SHA256 sidecar
+verification is the 90% solution that ships in days.
+
+### Post-install version verification
+
+**Problem.** `msiexec /i ... /passive /norestart` exits 0 in several
+scenarios where the install didn't materially complete:
+- MajorUpgrade matching the *same* version (re-running v3.15.2 install
+  with v3.15.2 already installed): exits 0, no file changed.
+- Restart Manager scheduled deferred file replace (exit 3010 —
+  REBOOT_REQUIRED, file isn't actually swapped until next reboot).
+- `/passive` mode: msiexec may exit 0 immediately when another `msiexec`
+  is running and the new install is queued.
+
+JSON consumers reading `tr300 update --json` would see
+`"success": true, "strategy": "msi_global"` — false positive, fleet
+automation thinks the rollout is done when the on-disk binary is still
+old.
+
+**Fix.** After `msiexec` / Inno EXE returns success, re-exec
+`env::current_exe() --version` via a fresh `Command`, parse the
+version, compare against the expected `latest`. Mismatch → return
+`StrategyError::Runtime` with a clear message. msiexec exit code 3010
+is intercepted BEFORE the version check and surfaces as a dedicated
+"Reboot, then verify with `tr300 --version`" message — operators can
+distinguish "needs reboot" from "actually failed" from the JSON
+`attempts[].message` field.
+
+**Why not re-exec `cargo install --list` or similar.** The cargo path
+doesn't apply (these are MSI/EXE strategies, not cargo). And the
+on-disk binary's `--version` output is the source of truth: it's
+literally the bytes that will run next time the user invokes `tr300`,
+so confirming THAT version equals expected is the only verification
+that actually matters.
+
+### WMI hard-timeout pattern
+
+**Problem.** Windows WMI queries (`wmi::WMIConnection::query()`) have
+no Rust-side timeout. The bounded-subprocess helper in
+`src/collectors/command.rs` only protects `Command::output()` calls.
+WMI bypasses it entirely. A deadlocked WMI provider — post-Windows-
+update misconfig, Group Policy lockdown of the security namespace,
+antivirus interfering with `Win32_EncryptableVolume` queries, broken
+`Winmgmt` service — could block the report for tens of seconds with
+no indication of why.
+
+**Fix.** `src/collectors/platform/windows.rs::with_timeout(budget, f)`:
+
+```rust
+fn with_timeout<F, T>(budget: Duration, f: F) -> Option<T>
+where
+    F: FnOnce() -> Option<T> + Send + 'static,
+    T: Send + 'static,
+{
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || { let _ = tx.send(f()); });
+    rx.recv_timeout(budget).ok().flatten()
+}
+```
+
+The 5-second `WMI_TIMEOUT` constant is the budget. All four WMI-touching
+collectors (`get_bitlocker_status`, `get_socket_count_wmi`,
+`get_network_info_wmi`, `last_cold_boot_seconds`) wrap their inner
+logic in this. The 5th (`get_battery_wmi(&WMIConnection)`) takes a
+non-`'static` reference so can't be wrapped this way — but
+`get_battery_native()` via `GetSystemPowerStatus` covers the same
+ground in ~1 ms and runs first.
+
+**The detached-thread tradeoff.** Rust intentionally doesn't kill
+threads. When `with_timeout` returns `None`, the worker thread is
+still blocked on its WMI call and continues running in the background.
+There's no resource leak in practice: when our process exits,
+Windows tears down all threads. The COMLibrary created inside the
+worker thread's closure has the same lifetime as the thread, so it
+goes too. The cost is a tiny amount of orphan background work per
+timeout-firing WMI call — bounded, paid for by the OS, not our
+problem.
+
+**Rejected alternative: tokio + spawn_blocking + timeout.** Async
+runtime drag for a single sync wait operation. Not worth pulling in
+the entire tokio crate.
+
+**Rejected alternative: a global watchdog thread that kills the
+process after N seconds.** Too coarse — would terminate the entire
+report even when only one collector is hung, and there's no way to
+return the data that WAS collected before the timeout.
+
+### Windows self-EXE delete via detached cleanup
+
+**Problem.** `tr300 uninstall` -> Complete called `fs::remove_file`
+on `find_binary_location()`, which prefers `env::current_exe()`. When
+the user ran `tr300 uninstall` from `%LocalAppData%\Programs\tr300\
+bin\tr300.exe`, that path IS the running EXE. Windows refuses
+`DeleteFile` on a running EXE image with raw OS error 5 because the
+loader holds an open file handle. The user was left with profile
+cleaned, binary still on disk, and a confusing `RemoveBinary` error.
+
+**Fix.** `is_running_binary(target)` canonicalizes both `target` and
+`env::current_exe()` via `fs::canonicalize` (handles 8.3 short names,
+junctions, drive-letter case) and compares for equality. When the
+running binary IS the target, `schedule_self_cleanup` spawns a
+detached `cmd.exe` job:
+
+```
+cmd /c timeout /t 2 /nobreak > nul & del "<binary>" & rd /q "<parent>"
+```
+
+With `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP` creation flags so
+the child has no console window and doesn't inherit our process
+group. The 2-second wait gives our parent process time to exit and
+release the file handle; `del` then succeeds.
+
+**Why not `MoveFileEx(path, NULL, MOVEFILE_DELAY_UNTIL_REBOOT)`.**
+Works but requires the user to reboot before the binary is actually
+gone, and `MOVEFILE_DELAY_UNTIL_REBOOT` requires admin on Windows 11
+(MS hardened this in 22H2 to prevent ransomware abuse). The detached
+cleanup gives sub-3-second cleanup without elevation.
+
+**Why `cmd.exe` rather than PowerShell.** `cmd.exe` is always
+present on Windows; PowerShell 5.1 is usually but not always
+(Server Core, stripped images). `cmd` has no startup overhead;
+`pwsh -Command` has measurable JIT warmup. For a 2-line cleanup
+script, cmd wins.
+
+**Parent-dir cleanup heuristic.** Only `rd /q` the parent if it
+contains "tr300" in the name (case-insensitive) — matches the
+synchronous-path heuristic, prevents wiping unrelated dirs in
+unusual portable-install scenarios.
+
+## Thermal reporting, battery hardening, and bounded concurrent probes (v4.3.0 product; v4.3.12 distribution)
+
+**Status:** Product code and complete GitHub distribution are published through
+v4.3.12 at exact source/tag
+`19246b76f39c53340e6be62a332cedca9bca766c`. Final PR #14 head `8f5919b`
+passed the
+complete local gate, controlled benchmark, zero-finding full/delta security
+scans, all 19 CI jobs in `32764677640`, release plan `32764677784`, independent
+reviews, and every review thread. It merged as `2f997d2`; exact-main CI
+`32766014047` passed all 19 jobs. Automatic OIDC later published exact v4.3.0;
+its tag failed before draft creation on the Windows bootstrap guard. PR #18
+repaired that guard, and exact-main trusted OIDC published v4.3.1, but its tag
+failed before draft creation on Apple system-Bash compatibility. v4.3.2 fixed
+that boundary but its tag exposed the raw checksum contract described above.
+v4.3.3 fixed that contract but its tag exposed the raw tar-mode contract.
+v4.3.4 fixed that contract but its tag exposed the release-manifest predicate
+context defect. v4.3.5 fixed that defect but its tag exposed the draft by-tag
+lookup gap. v4.3.6 fixed draft discovery but its tag exposed the managed-
+installer checksum-record mismatch. v4.3.7 fixed that mismatch, and its tag
+created the exact private 24-asset draft but exposed the read-only
+downstream draft-visibility boundary described above. v4.3.8 fixed that
+boundary but exposed the Apple inventory and Windows attestation-token
+contracts described above. v4.3.9 and v4.3.10 fixed later private-stage
+boundaries; v4.3.10 stopped only on the native PackageKit message assertion
+described above. v4.3.11 passed that assertion but its test harness could not
+unlink a fixture from root-owned `/Users`. v4.3.12 repaired only that fixture
+cleanup and passed exact-main CI/OIDC, both native Apple lifecycles, the exact
+34-asset finalizer, post-public validation, and the public-byte audit. Physical
+AMD64 Linux and Raspberry Pi acceptance remain separate open gates.
+
+**Decision 1 — thermals report only trusted sensors, in both `--fast` and full
+mode.** Linux uses pure sysfs. CPU collection recognizes coretemp, k10temp,
+zenpower, `cpu_thermal`, and `soc_thermal`; it prefers explicitly labeled
+package/die/CPU channels and selects the hottest plausible healthy reading
+within the best available class. GPU collection recognizes amdgpu, nouveau,
+and nvidia hwmon devices and likewise selects the hottest valid channel.
+Directory/channel order cannot determine the answer. An absent hwmon fault
+file is allowed, but a present `tempN_fault` must parse as zero; unreadable,
+malformed, nonzero, non-finite, and implausible readings are rejected. If no
+CPU hwmon candidate survives, only CPU/SoC-labeled thermal zones participate
+in the deterministic hottest-valid fallback.
+
+Windows reports only NVIDIA GPU temperature, and only when adapter discovery
+already found NVIDIA hardware. `nvidia-smi` uses the command timeout selected
+by collection mode, so fast mode never silently inherits a full-mode budget.
+Windows CPU temperature remains `None` and JSON `null`: an ACPI thermal-zone
+instance does not reliably identify its physical source, so labeling it as CPU
+would violate the evidence-backed optional-value contract. macOS is also
+intentionally `None` for CPU/GPU thermals because SMC access would require
+unsafe IOKit code or sudo `powermetrics` for an optional row.
+
+Table and saved Markdown rows are omitted on absence and stay in the CPU
+section when present. JSON adds nullable schema-v1
+`cpu.temperature_c`/`cpu.gpu_temperature_c` keys without renaming or changing
+existing keys.
+
+**Rejected alternatives:** NVML bindings (new unsafe dependency for one
+number), LibreHardwareMonitor-style kernel drivers (contradicts the install-
+safety posture), any Windows ACPI zone-to-CPU label without trustworthy sensor
+identity (fabricates provenance), and macOS sudo/unsafe-SMC collection for an
+optional report field.
+
+**Decision 2 — Linux battery selection requires corroboration without rejecting
+valid kernel ABI forms.** Selection rejects explicit `scope=Device` and
+`present=0` evidence, requires at least one well-formed live measurement, and
+uses deterministic BAT*-first ordering. The Linux power_supply ABI permits
+averaged attributes plus signed current/power discharge direction, so
+`voltage_avg`, `current_avg`, `power_avg`, `charge_avg`, and `energy_avg`
+participate alongside their `*_now` forms, and negative or zero current/power
+readings remain valid evidence.
+When compatible energy/charge now-or-average and full values exist, reported
+capacity is cross-validated within the established tolerance. A missing status
+renders a bare percentage rather than fabricating "(Unknown)".
+
+These checks address plausible peripheral, absent-pack, and stale-gauge
+misattribution paths; they do **not** establish which node produced the
+historical Raspberry Pi "30%" row. That causal claim remains open until physical
+Pi sysfs diagnostics are captured. On macOS, the `pmset` fallback requires a
+recognized `-InternalBattery-N` record and never substitutes a generic stray
+percentage. macOS still has no thermal collection.
+
+**Decision 3 — independent bounded probes overlap under launch-relative
+deadlines.** Profiling identified the Windows full-mode critical path as a
+BitLocker security-namespace probe that could consume the shared WMI timeout
+after the main batch. The BitLocker worker now launches before independent work
+and is awaited only for the remainder of its dedicated two-second deadline;
+elapsed time elsewhere cannot start a fresh full wait. Registry reads moved
+from `reg.exe` spawns to native APIs, duplicate
+`Win32_ComputerSystem`/`Win32_NetworkAdapterConfiguration` queries and process-
+table snapshots collapsed, and post-batch fallbacks no longer stack redundant
+work. The separate NVIDIA subprocess follows Fast/Normal command budgets rather
+than an unbounded or one-size-fits-all wait.
+
+On the controlled Alienware m16 R2 benchmark, seven alternating full-mode runs
+per version produced medians of 5146.9 ms for the v4.2.2 baseline and 2120.2 ms
+for the candidate: about 3026.6 ms (58.8%) less, a 2.43× runtime ratio. Eleven
+alternating fast-mode runs per version produced medians of 257.3 ms and
+260.4 ms; the measured +1.2% is background-level, so this decision makes no
+fast-mode performance-gain claim. The full local and final pushed exact-head
+hosted/security/review gates are recorded in `TESTING.md`. Neither result
+establishes tagged release acceptance or independent AMD64 Linux/Raspberry Pi
+physical acceptance.
+
+---
+
+## PATH-level report alias and lifecycle ownership (v4.4.0)
+
+**Decision (2026-09-24):** Install a real `report` executable beside `tr300`
+on Windows, macOS, Linux, and every supported distribution channel. The user
+explicitly superseded the earlier report-only proposal: both names support
+all CLI flags and actions, including install, update, and uninstall.
+
+`report` forwards the original argument vector to the exact adjacent `tr300`
+without a shell or PATH lookup. The canonical child implements parsing,
+collection, output, help, version, and maintenance, preserving origin detection
+and one implementation of lifecycle behavior. The wrapper propagates its exit
+status. This avoids making a launcher path look like a distinct product owner.
+
+Cargo and archives, managed shell/PowerShell installers, Windows MSI/EXE,
+and the signed macOS PKG/compatibility DMG carry both executables. Existing
+stable asset names and the 34-asset publication inventory remain unchanged.
+Both Apple binaries require Developer ID signatures and notarization.
+
+Install, update, rollback, migration, and Complete uninstall must use positive
+ownership evidence for each payload. A historical one-binary receipt does not
+own a neighboring `report`; an unrelated file must be preserved or cause
+preflight refusal before mutation. Unprovable cleanup must fail closed and
+direct users to their package uninstaller or explicit manual resolution.
+Tests cover old single-binary to paired upgrades and foreign sibling files.
+Windows updates through the waiting alias must account for its loaded image;
+success requires both command versions after replacement.
+
+Optional profile installation retires the old TR-300-owned shell alias while
+preserving foreign definitions. Existing users may refresh the owned profile
+block by running either `tr300 install` or `report install` after upgrade.
+Package installation does not silently edit profiles.
+
+`tr300 config` remains outside scope. Both names reject unsupported arguments
+through the canonical parser.
+
+**Rejected alternatives:** keeping only a profile alias (unavailable in clean
+shells), a PATH-resolved wrapper (wrong-executable risk), duplicated maintenance
+implementations (behavior and ownership drift), and report-only parsing
+(explicitly superseded by the user's full-alias requirement).
+
+**Windows recovery addendum (2026-09-24):** The v4.4 updater supersedes the
+earlier stale-backup sweep. Only a verified successful transaction schedules
+cleanup of its exact backups. A later transaction cannot distinguish an
+interrupted successful cleanup from incomplete rollback by process lifetime,
+file locks, age, or paired-file presence. Preserve all prior recovery files;
+an interrupted cleanup may therefore leave a small private backup. Regression
+fixtures verify both failed payload restorations survive a later update.

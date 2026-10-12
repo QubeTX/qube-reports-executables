@@ -4,6 +4,27 @@ All notable changes to the `qube-reports-executables` distribution repository ar
 
 ---
 
+## [3.0.0] - 2026-10-11
+
+### Changed
+
+- Refresh the pinned offline snapshot to TR-300 v4.4.0, ND-300 v4.0.1, and SD-300 v4.1.0. WB-300 and Shaughv OS are excluded.
+- Publish a curated `qubetx-offline-bundle.zip` release asset rather than relying on a repository source ZIP as the primary download.
+- Rewrite installation and upgrade guidance to distinguish native installation, portable extraction, offline setup, network-dependent features, and SD-300 3.x-to-4.x upgrades.
+
+### Added
+
+- SD-300 GUI archives for Windows, macOS, Linux x64 GNU, Linux ARM64 GNU, and Linux x64 musl; native installers already contain CLI and GUI together.
+- macOS portable CLI archives for all three products; keep companion `report` and `speedqx` binaries in their original archives.
+- A fully local HTML start page, pinned upstream documentation/licenses, release provenance manifest, complete checksums, and an offline PowerShell verifier.
+- Reusable build/packaging scripts that fail on missing assets, moved tags, digest mismatches, corrupt archives, or unexpected payload files.
+
+### Verification
+
+- Every payload is compared with its official sidecar and GitHub release digest; every archive is read for integrity before publication. Platform runtime qualification is reported separately in release notes.
+
+---
+
 ## [2.0.0] - 2026-07-19
 
 ### Changed

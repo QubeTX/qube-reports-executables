@@ -1,0 +1,81 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH speedqx 1  "speedqx 4.0.1"
+.SH NAME
+speedqx \- SpeedQX Internet Speed Test \- QubeTX Developer Tools
+.SH SYNOPSIS
+\fBspeedqx\fR [\fB\-\-deep\fR] [\fB\-\-max\-bytes\fR] [\fB\-\-accept\-mlab\fR] [\fB\-\-json\fR] [\fB\-\-ascii\fR] [\fB\-\-no\-color\fR] [\fB\-\-duration\fR] [\fB\-\-fastcom\-duration\fR] [\fB\-\-latency\-probes\fR] [\fB\-\-fast\fR] [\fB\-\-skip\-msak\fR] [\fB\-\-skip\-apple\fR] [\fB\-\-update\fR] [\fB\-v\fR|\fB\-\-version\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIsubcommands\fR]
+.SH DESCRIPTION
+SpeedQX Internet Speed Test \- QubeTX Developer Tools
+.PP
+Sustained application throughput on this device and path (Methodology v5). Quick is the default, capped at 90 seconds. \-\-deep repeats the primary measurement and adds supplementary sources within five minutes. Cloudflare and M\-Lab MSAK each get one primary vote; NDT7 is a separate single\-stream comparison. M\-Lab requires \-\-accept\-mlab because it publishes measurement results and IP addresses.
+.SH OPTIONS
+.TP
+\fB\-\-deep\fR
+Deep measurement (five\-minute cap; Quick is the default)
+.TP
+\fB\-\-max\-bytes\fR \fI<MAX_BYTES>\fR
+Synthetic payload budget in bytes (default: Quick 5 GB, Deep 20 GB)
+.TP
+\fB\-\-accept\-mlab\fR
+Allow M\-Lab tests: M\-Lab publishes measurement results and your IP address
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+Print version
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.SH OUTPUT
+.TP
+\fB\-\-json\fR
+Output results as JSON
+.TP
+\fB\-\-ascii\fR
+Use ASCII characters instead of Unicode box\-drawing
+.TP
+\fB\-\-no\-color\fR
+Disable colored output
+.SH "SPEED TEST"
+.TP
+\fB\-\-duration\fR \fI<DURATION>\fR [default: 30]
+Legacy duration alias; v5 uses bounded Quick/Deep schedules
+.TP
+\fB\-\-fastcom\-duration\fR \fI<FASTCOM_DURATION>\fR [default: auto]
+Legacy fast.com duration alias; v5 uses a bounded supplementary schedule
+.TP
+\fB\-\-latency\-probes\fR \fI<LATENCY_PROBES>\fR [default: 20]
+Legacy probe\-count alias; v5 uses 12 idle probes
+.TP
+\fB\-\-fast\fR
+Alias for Quick, the default 90\-second profile
+.TP
+\fB\-\-skip\-msak\fR
+Skip the M\-Lab MSAK multi\-stream provider
+.TP
+\fB\-\-skip\-apple\fR
+Legacy alias; Apple networkQuality is outside the common v5 profile
+.SH ACTIONS
+.TP
+\fB\-\-update\fR
+Check for updates and install the latest version (legacy flag form of `speedqx update`)
+.SH SUBCOMMANDS
+.TP
+speedqx\-update(1)
+Check for updates and install the latest release
+.TP
+speedqx\-help(1)
+Print this message or the help of the given subcommand(s)
+.SH EXTRA
+EXAMPLES:
+  speedqx                          Quick test
+  speedqx \-\-accept\-mlab            Quick with both primary networks
+  speedqx \-\-deep \-\-accept\-mlab     Deep, five\-minute cap
+  speedqx \-\-max\-bytes 250000000    Limit synthetic payload to 250 MB
+  speedqx \-\-json                  Machine\-readable results and raw traces
+  speedqx update                  Update both CLI tools
+
+\-\-fast remains a Quick alias. Legacy duration and latency\-count flags parse for compatibility; v5 schedules are fixed. Ctrl\-C preserves valid partial results. Payload budgets exclude protocol overhead and may have in\-flight WebSocket overshoot.
+.SH VERSION
+v4.0.1
+.SH AUTHORS
+Emmett S <hey@emmetts.dev>

@@ -1,5 +1,7 @@
 # Discoveries & Process Notes
 
+> Historical notes from the original bundle. For the current process and product list, use README.md and qube-tx-build-runbook.md. This file is excluded from the curated release ZIP.
+
 Notes, findings, and lessons learned during the creation of the `qube-reports-executables` distribution repository. This documents what we discovered about the QubeTX build pipeline, macOS code signing, and the decisions made along the way.
 
 **Date:** February 25, 2026

@@ -1,0 +1,1816 @@
+# Human Changelog
+
+A plain-English mirror of [`CHANGELOG.md`](./CHANGELOG.md) — same releases,
+same groupings, but rewritten so a non-technical reader can answer
+"what shipped, and why should I care?" in 30 seconds.
+
+The technical detail (CI run IDs, commit hashes, API names, error codes,
+file paths, etc.) lives in `CHANGELOG.md` for engineers and agents. This
+file is the user-facing summary.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [4.4.0] - 2026-09-24
+
+### Fixed
+- Windows MSI installers now show the PolyForm Noncommercial 1.0.0 license
+  instead of placeholder text. Windows EXE installers already show this license;
+  the Mac installer has no license dialog.
+- Installs and upgrades protect unrelated commands named `report`, including
+  when upgrading from an older TR-300 installation.
+- Overlapping Windows updates preserve each other’s recovery files.
+- Updating through either command handles running Windows executables safely.
+  If recovery cannot finish, the error explains which files were preserved.
+
+### Added
+- **You can now type `report` in any terminal after installing TR-300.** It is
+  a real command included in every Windows, Mac, Linux, managed, and Cargo
+  install—not a PowerShell or shell-profile shortcut. It supports the normal
+  full report plus fast, JSON, ASCII, custom-title, and save options.
+- **Both names do the same thing.** `report update`, `report install`, and
+  `report uninstall` work just like the corresponding `tr300` commands.
+- **Both commands now come with matching terminal documentation.** `man tr300`
+  and `man report` explain the same reporting and maintenance options.
+  Both `-h` and `--help` are checked before release so their
+  command and option lists stay current.
+
+### Changed
+- **Upgrading no longer depends on a fragile profile alias.** If you previously
+  ran `tr300 install`, running it once after the upgrade removes TR-300's old
+  alias from the auto-run block. Any unrelated command or function that you
+  named `report` is preserved and called out as a possible conflict.
+- **Both commands now travel together through install, update, repair,
+  rollback, and uninstall.** The automated Windows and Mac package tests check
+  that `report` has the right version, exposes the same commands,
+  and disappears with the rest of TR-300.
+- **There still is no `tr300 config` command.** Settings are supplied as
+  command-line options; typing `tr300 config` returns an argument error.
+
+### Security
+- Update the secure-connection library to fix a recently disclosed TLS issue.
+- **Windows cleanup now uses the copy of `cmd.exe` owned by Windows itself.**
+  This prevents a different program earlier on PATH from being selected for
+  deferred uninstall cleanup.
+
+## [4.3.12] - 2026-08-25
+
+### Changed
+- **This packaging-test repair completed the cross-platform release; the report
+  and installer rules are unchanged.** Version 4.3.11 remains preserved as an
+  immutable crate, tag, and private draft. Version 4.3.12 is now published on
+  crates.io and GitHub with the complete set of 34 Windows, macOS, and Linux
+  release files, and the stable download links point to it.
+
+### Fixed
+- **Mac testing now uses the permission required to remove its temporary test
+  account directory from the system-owned Users folder.** The cleanup remains
+  limited to the exact temporary fixture, and automated coverage prevents the
+  invalid unprivileged cleanup from returning.
+
+### Security
+- **Version 4.3.11 never became public on GitHub.** Its crate, first-stage
+  release, Windows packages, Apple signatures, notarization, and the actual
+  managed-install safety rejection all succeeded. The final Mac tests stopped
+  only while deleting their temporary fixture. Version 4.3.12 repairs that
+  test cleanup without changing the product, installer policy, or immutable-
+  tag rules.
+
+## [4.3.11] - 2026-08-25
+
+### Changed
+- **This is a packaging-only repair; the report itself is unchanged.** Version
+  4.3.10 remains preserved as an immutable crate, tag, and private draft.
+  Version 4.3.11 is the only active candidate for complete cross-platform
+  downloads.
+
+### Fixed
+- **Mac testing now checks each rejection message where macOS actually exposes
+  it.** The package's own safety script is checked directly for its useful
+  recovery guidance, while the real macOS installer is checked for its normal
+  generic pre-install failure and for leaving the existing managed install
+  completely untouched.
+
+### Security
+- **Version 4.3.10 never became public on GitHub.** Its crate, first-stage
+  release, Windows packages, signatures, and notarization succeeded, leaving a
+  correct private 30-download draft. The final Mac tests stopped only because
+  they expected macOS to repeat a script message that PackageKit intentionally
+  summarizes. Version 4.3.11 fixes that test boundary without weakening the
+  package policy, release automation, or immutable-tag rules.
+
+## [4.3.10] - 2026-08-25
+
+### Changed
+- **This is another packaging-only repair; the report itself is unchanged from
+  the v4.3 line.** Version 4.3.9 remains preserved as an immutable crate, tag,
+  and private draft. Version 4.3.10 is the only active candidate for complete
+  cross-platform downloads.
+- **Windows now proves each repair using the right source for that release
+  stage.** Before publication it reuses the exact private installer bytes that
+  were already frozen. After publication it automatically exercises the real
+  Global updater against the public version-specific download.
+
+### Fixed
+- **Mac packaging no longer depends on alphabetic ordering differences between
+  runners.** It accepts the three expected checksum rows in any order but still
+  rejects a missing, extra, duplicate, renamed, or malformed entry. Automated
+  tests exercise every valid ordering and the invalid cases.
+- **Private Windows testing no longer tries to download an asset that is still
+  intentionally private.** All private installer and recovery checks remain;
+  the real Global live-update transaction runs automatically once the exact
+  release is public, and its error output is preserved if it fails.
+
+### Security
+- **Version 4.3.9 never became public on GitHub.** Its source checks, crate,
+  first-stage release, and Windows packaging succeeded, leaving a correct
+  private 30-download draft. Mac packaging stopped before using Apple
+  credentials because one filename comparison depended on runner ordering.
+  Windows testing passed every other case but the Global updater could not
+  anonymously download the still-private candidate. Version 4.3.10 fixes both
+  test boundaries without weakening installer or publication custody.
+
+## [4.3.9] - 2026-08-25
+
+### Changed
+- **This is another packaging-only repair; the report itself is unchanged from
+  the v4.3 line.** Version 4.3.8 remains an immutable crate, tag, and private
+  draft. Version 4.3.9 became the next complete-download candidate and remains
+  preserved as evidence of the later private-stage stops recorded above.
+
+### Fixed
+- **The Mac packaging stage now agrees on the exact files handed between its
+  trusted automation steps.** The handoff intentionally includes the two shell
+  installer sources as well as the two Apple archives and their checksums. The
+  next step no longer rejects those valid installer files as unexpected.
+- **The Windows packaging stage again supplies read-only GitHub authorization
+  to the official installer verification step.** That narrowly restores the
+  identity check without allowing the build job to change a Release. The helper
+  removes and checks the token before launching the downloaded setup program,
+  so that third-party child process cannot inherit it.
+
+### Security
+- **Version 4.3.8 never became public on GitHub.** Its crate and first-stage
+  private release succeeded, but the Mac stage stopped before package building
+  or publishing when one step expected an older, smaller file set. Windows
+  packaging completed the Corporate MSI, then stopped before both EXE builds
+  and before any Windows upload because the official setup-tool identity check
+  had no GitHub token. Version 4.3.9 fixes both narrow boundaries without
+  changing the report itself.
+
+## [4.3.8] - 2026-08-25
+
+### Changed
+- **This is another packaging-only repair; the report itself is unchanged from
+  the v4.3 line.** Its exact crate and tag are published and its exact private
+  draft remains preserved. Version 4.3.9 fixes the next automated packaging
+  boundary.
+- **The release notes now explain who can see a private GitHub draft.** GitHub
+  shows drafts only to callers with permission to push. The automated read-only
+  Windows and Mac stages therefore saw no draft even though the publisher had
+  created the correct one.
+
+### Fixed
+- **The private-draft permission repair worked.** Small, fresh automation steps
+  could find and freeze the private draft while build and installer jobs stayed
+  read-only.
+- **Private-draft access stays away from build and installer code.** Small,
+  fresh automation steps get only the access needed to find and freeze the
+  private draft. Build and installation tests remain read-only, and separate
+  fresh publishing steps are the only steps that actually change the draft.
+
+### Security
+- **Version 4.3.8 never became public on GitHub.** Its exact source passed all
+  20 main CI jobs, trusted publication produced the unyanked crate, Apple
+  credential preflight passed, and the 13-job first-stage Release created the
+  correct private 24-download draft. The Mac stage then rejected its trusted
+  six-file handoff because the next step still expected only four files. Every
+  Mac build, publish, and smoke job skipped. The Windows stage completed its
+  Corporate MSI, then stopped before both EXE builds and artifact upload because
+  its official Inno Setup verification step lacked the read-only GitHub token
+  it requires. Windows publishing skipped, the draft stayed private with
+  exactly 24 downloads, and nothing became public.
+- **Version 4.3.7 never became public on GitHub.** Its crate remains available,
+  its complete first-stage release build succeeded, and its exact 24-download
+  draft remains private. The Windows and Mac stages stopped at their first
+  read-only lookup, validation did not run, no downloads were added, and
+  nothing was exposed publicly.
+
+## [4.3.7] - 2026-08-25
+
+### Changed
+- **This is a packaging-only repair; the report itself is unchanged from the
+  v4.3 line.** Version 4.3.6 remains an immutable crate and private draft, while
+  v4.3.7 repaired the checksum handoff and reached its own exact private draft.
+  It is now immutable; v4.3.8 later fixed that boundary before the newer
+  packaging stops recorded above.
+
+### Fixed
+- **The release publisher now reads the verified installer checksum in the
+  same filename format that its checksum tool writes.** The previous workflow
+  looked for an extra star before the filename, found nothing, and stopped
+  after safely creating the private draft. The corrected handoff sends the
+  exact installer identity into the automatic Windows and Mac stages.
+- **Tests now execute the final checksum handoff instead of stopping just before
+  it.** The fixture uses the same spacing and filename emitted in a real release
+  and requires the exact checksum to reach the next workflow.
+
+### Security
+- **Version 4.3.7 never became public on GitHub.** Its crate and complete
+  first-stage release succeeded, but both read-only downstream stages could not
+  see the private draft. They stopped before building or changing anything;
+  validation skipped and the exact 24-download draft remains private.
+- **Version 4.3.6 never became public.** Its crate, builds, Apple signing and
+  notarization, and exact 24-download draft all succeeded. The checksum lookup
+  typo then stopped the chain before Windows and Mac completion. The tag and
+  private draft remain untouched; v4.3.7 fixes forward.
+
+## [4.3.6] - 2026-08-25
+
+### Changed
+- **This is a packaging-only repair; the report itself is unchanged from the
+  v4.3 line.** Its immutable crate and tag remain available. Its correct
+  24-download draft remains private. v4.3.7 later reached its own private draft
+  before another safe stop; later immutable repairs and their results are
+  recorded in the newer entries above.
+
+### Fixed
+- **The automated release chain can now see its own private draft.** GitHub does
+  not expose drafts through its normal “release by tag” endpoint. The release,
+  Windows, validation, and Mac jobs now find the one exact draft through the
+  authenticated release inventory, bind its numeric ID, and keep checking that
+  same draft until it is ready to become public.
+- **Tests now reproduce the real GitHub behavior that caused the stop.** They
+  verify that the draft remains invisible through the old lookup, is visible in
+  the full authenticated inventory, and that ambiguous, changed, incomplete,
+  public, prerelease, or empty download sets stop before publication.
+
+### Security
+- **Version 4.3.6 never became public.** It built and signed successfully and
+  created the correct 24-download private draft. Its final checksum lookup
+  expected an extra star before the installer filename, found no digest, and
+  stopped the chain before Windows and Mac completion. The draft remains
+  private; v4.3.7 fixes forward.
+
+## [4.3.5] - 2026-08-25
+
+### Changed
+- **This is a packaging-only repair; the report itself is unchanged from the
+  v4.3 line.** Its immutable crate and tag remain available. Its correct
+  24-download draft remains private, and v4.3.6 was its immutable fix-forward.
+
+### Fixed
+- **Release notes and download metadata now survive their validation step
+  intact.** The release workflow checks that the title, notes, and stable-release
+  status are valid while retaining the complete packaging record for the next
+  stage. Tests run that real validation sequence and reject incomplete or
+  incorrectly typed release information.
+
+### Security
+- **Version 4.3.5 stopped safely after creating the correct private draft.** The
+  workflow's follow-up tag lookup cannot see drafts, so it reported “not found”
+  and prevented every public step. Its crate, tag, and private draft stay
+  untouched; version 4.3.6 fixes forward.
+
+## [4.3.4] - 2026-08-25
+
+### Changed
+- **This is a packaging-only repair; the report itself is unchanged from the
+  v4.3 line.** Version 4.3.3 remains available as an immutable crate. Version
+  4.3.4 reached crates.io and passed Mac archive signing, but its downloadable
+  release stopped safely during metadata preparation; v4.3.5 fixes forward.
+
+### Fixed
+- **Mac packaging now understands the safe file-mode form emitted by its pinned
+  archive tool.** The workflow accepts the tool's matching file-type markers
+  with the expected permissions, while still rejecting links, type confusion,
+  special permissions, unexpected files, unsafe paths, and oversized archives.
+  Tests reproduce both the real packaging-tool bytes and the portable
+  permission-only form.
+
+### Security
+- **Version 4.3.3 stopped safely before Mac signing or any partial download
+  release.** Its crate and tag stay untouched. Version 4.3.4 fixes forward
+  through the same automatic review, `main`, signing, and publication chain.
+
+## [4.3.3] - 2026-08-25
+
+### Changed
+- **This is a packaging-only repair; the report itself is unchanged from the
+  v4.3 line.** Version 4.3.2 remains available as an immutable crate. Version
+  4.3.3 reached crates.io, but its downloadable-release run stopped safely;
+  v4.3.4 is the next complete-download candidate.
+
+### Fixed
+- **The release system now understands the exact checksum files produced by
+  its pinned packaging tool.** That tool adds a harmless blank line after its
+  checksum records. The workflow now verifies those bytes exactly, then writes
+  one terminal newline in each public checksum file before any release is
+  assembled. Tests cover
+  missing or extra newlines, Windows line endings, trailing garbage, wrong
+  signed-file formatting, and a changed combined checksum file.
+
+### Security
+- **Version 4.3.2 stopped safely before Mac signing or any partial download
+  release.** Its crate and tag stay untouched. Version 4.3.3 fixes forward
+  through the same automatic review, `main`, signing, and publication chain.
+
+## [4.3.2] - 2026-08-24
+
+### Added
+- **Everything added in v4.3 is included here.** Linux can show trustworthy CPU
+  and GPU temperatures, Windows
+  can show a bounded NVIDIA GPU reading, and unsupported temperatures simply
+  stay blank. The machine-readable report gains matching optional fields, and
+  the new `--full` flag explicitly chooses the normal complete report.
+
+### Changed
+- **Version 4.3.2 reached crates.io automatically, but its Mac signer rejected
+  the packaging tool's valid extra blank line before signing or creating a
+  draft.** The immutable tag stays untouched and version 4.3.3 fixes forward.
+- **The full Windows report is substantially faster on the controlled test
+  machine.** Its median fell from 5146.9 ms to 2120.2 ms across seven
+  alternating runs per version—58.8% less time, or a 2.43× runtime ratio.
+  Quick-mode medians differed by only 1.2%, so no quick-mode speedup is claimed.
+- **Switching a Mac from the managed install to the direct package follows a
+  clear safe sequence.** Refresh the managed copy, choose Complete uninstall,
+  then run the PKG. The package checks all standard local-account locations
+  before installing anything and preserves any conflict it finds.
+
+### Fixed
+- **Battery detection is more conservative.** Linux recognizes current and
+  averaged readings—including legitimate negative and zero values—while
+  rejecting device-scoped, absent, or malformed supplies. The Mac fallback now
+  accepts only a real internal-battery record. The old Raspberry Pi "30%"
+  report remains unverified until it can be examined on the physical Pi.
+- **Both packaging failures found by the first two v4.3 tags are repaired.**
+  Windows accepts the official build tool's safe hard-linked command without
+  accepting redirected files. Mac packaging now uses only features supported
+  by the system shell, and both kinds of hosted Mac test that exact staging
+  work before a tag can qualify. The two earlier tags remain untouched and
+  neither exposed a partial download release.
+
+### Security
+- **Crates.io publishing is automatic after accepted code reaches `main`; once
+  the qualified tag is pushed, all platform packaging and public checks continue
+  automatically.** Every irreversible step still proves the exact source and
+  bytes. Downloads stay private through Windows and native Mac validation, then
+  the final Mac step publishes the complete 34-file release. Routine releases
+  need no stored crates publishing token or recurring approval click.
+
+## [4.3.1] - 2026-08-24
+
+### Added
+- **This crate contains everything added in v4.3, although its tag did not
+  produce a downloadable GitHub release.** Linux can show trustworthy CPU and
+  GPU temperatures, Windows can show
+  a bounded NVIDIA GPU reading, and unsupported temperatures simply stay
+  blank. The machine-readable report gains matching optional fields, and the
+  new `--full` flag explicitly chooses the normal complete report.
+
+### Changed
+- **Version 4.3.1 reached crates.io automatically, but its Mac packaging step
+  stopped safely before signing or creating a draft.** The Mac's system shell
+  did not support newer shell features used by the workflow, so the immutable
+  tag is preserved and version 4.3.2 fixes forward.
+- **The full Windows report is substantially faster on the controlled test
+  machine.** Its median fell from 5146.9 ms to 2120.2 ms across seven
+  alternating runs per version—58.8% less time, or a 2.43× runtime ratio.
+  Quick-mode medians differed by only 1.2%, so no quick-mode speedup is claimed.
+- **Switching a Mac from the managed install to the direct package now follows
+  a clear safe sequence.** Refresh the managed copy, choose Complete uninstall,
+  then run the PKG. The package checks all standard local-account locations
+  before installing anything and preserves any conflict it finds.
+
+### Fixed
+- **Battery detection is more conservative.** Linux recognizes current and
+  averaged readings—including legitimate negative and zero values—while
+  rejecting device-scoped, absent, or malformed supplies. The Mac fallback now
+  accepts only a real internal-battery record. The old Raspberry Pi "30%"
+  report remains unverified until it can be examined on the physical Pi.
+- **Windows release packaging is repaired and now rehearsed before release.**
+  Version 4.3.0 reached crates.io, but its GitHub packaging run stopped safely
+  before publishing downloads because a new file-safety check rejected the
+  official build tool installer's normal hard-linked alias. The check still
+  blocks real path redirection, while every pull request and accepted `main`
+  update now runs the same Windows bootstrap used by a release tag.
+
+### Security
+- **Crates.io publishing is automatic after accepted code reaches `main`; once
+  the qualified tag is pushed, GitHub packaging continues without approval
+  clicks.** Every irreversible step still proves the exact source and bytes.
+  Crates.io uses a short-lived trusted login only after CI passes. GitHub
+  downloads stay private through Windows and native Mac validation, then the
+  final Mac step publishes the complete 34-file release and post-public updater
+  checks run. Routine releases need no stored crates publishing token.
+
+## [4.3.0] - 2026-08-24
+
+### Added
+- **Temperature readings are now part of the report.** On Linux the report
+  chooses the hottest trustworthy CPU and GPU readings in a repeatable way,
+  ignores sensors that report faults or nonsense, and recognizes the SoC
+  sensor names used by systems such as Raspberry Pi. On Windows, machines with
+  an NVIDIA graphics card can show GPU temperature; Windows CPU temperature is
+  left blank because the available system zones cannot reliably prove they are
+  the CPU. Macs report no temperature this release. If no trusted sensor
+  answers, the row simply stays hidden. Linux and Windows NVIDIA readings are
+  available in the quick startup view under their respective time budgets.
+- **A new `--full` flag** does what it says: runs the complete report. It's
+  the opposite of `--fast` and matches the default behavior.
+
+### Changed
+- **The full report on the Windows benchmark machine is substantially faster.**
+  Seven controlled alternating runs per version put the median at 5146.9 ms
+  before and 2120.2 ms after — about 3026.6 ms or 58.8% less time, a 2.43×
+  speedup. A slow security
+  check now overlaps other work under its own deadline, and repeated lookups
+  were consolidated. Eleven quick-report runs per version produced medians of
+  257.3 ms before and 260.4 ms after; that small 1.2% difference is
+  background-level, so there is no
+  quick-mode speedup claim.
+- **Switching from the managed Mac install to the system package is now a clear
+  three-step process.** Update or reinstall the managed v4.3 copy, choose
+  Complete uninstall so TR-300 safely removes both its command and matching
+  receipt, then open the PKG. A normal PKG upgrade still works, and switching
+  from an exact PKG back to the managed installer remains supported.
+
+### Fixed
+- **Linux is more careful about which battery belongs to the computer.** It
+  rejects supplies explicitly marked as devices or absent, accepts both
+  current and averaged live readings (including normal signed current/power
+  discharge values), and chooses consistently when several supplies exist. This closes
+  plausible paths to a fake percentage, but the source of the historical
+  Raspberry Pi "30%" report has not been proven; physical diagnostics remain
+  open.
+- The same care now applies to the Mac fallback: it accepts only the named
+  internal-battery line, not an unrelated percentage elsewhere in the output.
+
+### Security
+- **Release packaging now proves it is using the exact trusted release before
+  it can access signing credentials or upload files.** Forks, unrelated runs,
+  altered tags, and mismatched release records stop safely, which prevents an
+  untrusted change from borrowing the official release pipeline.
+- **A release stays private until the actual Windows installers pass.** The
+  Windows tests all use one frozen copy of the draft, and the final Mac step
+  checks that proof and every accepted download byte before making the complete
+  34-file release public. Public updater checks happen only after publication,
+  so an unpublished candidate is never mistaken for the public latest release.
+- **Crates.io publishing starts automatically with each accepted `main` update
+  and waits for that update's checks to pass.** The package is fully rehearsed
+  with read-only GitHub access and no registry login, a fresh runner proves it
+  has the same source and package bytes, and only the final upload receives a
+  short-lived login created for that one run. An already-published version is a
+  clean no-op, so normal documentation-only merges do not require attention.
+- **Mac signing credentials are isolated from project code.** Both kinds of Mac
+  runner prove signing and notarization access through the dedicated
+  environment. Credentialed jobs start fresh and receive only fixed package
+  data, with no approval click or wait timer in the normal tag workflow.
+- **Windows installer builds now use one verified official Inno Setup
+  download.** Both ordinary CI and release packaging check the compiler's
+  download hash, publisher signature, attestation, path, and exact version
+  instead of trusting a mutable package-manager install.
+- **Private shell profiles stay private during install and uninstall edits.**
+  If a Unix profile was owner-only, its atomic replacement keeps that access
+  mode instead of silently adopting a broader default.
+- **Windows package updates now keep administrator approval away from the
+  caller's folder and command search path.** They launch the operating system's
+  own installer or a verified TR-300 package from its trusted directory, so a
+  nearby lookalike program or library cannot inherit the elevated launch.
+  Company and personal installation choices keep their existing permission
+  behavior.
+- **The Mac package now stops before installing anything when a per-user copy
+   already exists.** Mac testing proved that a failed late installer step can
+   still leave the new system command behind, so the package no longer tries to
+   remove or roll back files in a user's home. It checks the standard managed
+   command and receipt locations in every home under the Mac's standard Users
+   folder plus every eligible local account's declared home, including custom
+   locations. It preserves any matching command or receipt it finds and asks the
+   user to complete the supported switch before trying again.
+
+## [4.2.2] - 2026-07-18
+
+### Fixed
+- **The Mac package now checks whether it can safely take ownership before it
+  installs its command.** v4.2.1 correctly refused a deliberately broken
+  managed-install receipt, but the check happened after macOS had already put
+  the new command in `/usr/local/bin`. Intel and Apple Silicon testing caught
+  that unsafe ordering and withheld all Mac installer downloads. v4.2.2 runs
+  the same signed TR-300 ownership check before macOS copies the package
+  payload, then performs the real cleanup only after the check succeeds.
+- **Windows old-to-new testing now compares an older release against the files
+  that existed in that release.** A new internal v4.2 installer helper is still
+  mandatory in a current release, but no longer disqualifies v4.1.3 from being
+  the older MSI/EXE/PowerShell update baseline.
+
+## [4.2.1] - 2026-07-18
+
+### Fixed
+- **The new one-command installers are now assembled and checked before a
+  release tag is created.** v4.2.0's code and crates.io package passed, and its
+  Mac downloads were signed and notarized during packaging, but release tests
+  looked for fully expanded download URLs instead of the pinned variables and
+  filenames both working scripts actually use. The shell check stopped the job
+  before publishing a GitHub Release. v4.2.1 checks each pinned version, base
+  address, and installer filename separately and performs
+  the same complete wrapper assembly during normal CI, so that host-only check
+  cannot fail for the first time after tagging. No v4.2.0 download was replaced
+  or silently changed.
+
+## [4.2.0] - 2026-07-18
+
+### Changed
+- **The easiest install is now one consistent terminal command.** Windows uses
+  the PowerShell `irm` command; Mac and Linux use the shell command. These
+  managed installers download prebuilt TR-300—Rust is not required—and future
+  `tr300 update` runs stay with that same method. If you deliberately run a
+  fresh managed command after using MSI, EXE, or PKG, it verifies the new copy
+  first and safely makes that command your new install choice. The packaged
+  installers remain available for IT, managed devices, and people who prefer a
+  graphical installer. Raw `cargo install` is now clearly labeled as an
+  advanced path because Cargo cannot run the cleanup hook this promise needs.
+  If authorization is cancelled or native cleanup fails, the managed command
+  restores the prior managed/Cargo copy and receipt instead of pretending the
+  channel switch completed. If a native uninstaller already finished and
+  cannot be reversed, it keeps the verified new managed command available
+  rather than risking a computer with no working TR-300.
+- **A fresh packaged installer now finishes with one clear owner or stops
+  safely.** MSI, EXE, and PKG installs no longer offer a cleanup opt-out. They
+  validate and temporarily preserve an exact older terminal-managed copy while
+  changing ownership, then restore it if cleanup cannot finish. Ambiguous or
+  permission-blocked state is reported as a failure with the fresh download
+  path instead of leaving two active commands and calling the install complete.
+- **Mac users now download and open one direct Apple installer package.** The
+  universal PKG supports Apple Silicon and Intel, installs the same system-wide
+  command, and keeps the same package receipt. TR-300 verifies its download,
+  Apple signature, notarization, and installed version before calling an update
+  successful.
+- **The old DMG remains only so existing v4.1.x installations can update.** It
+  contains the exact same PKG and is tested on both kinds of Mac, but new
+  install links and new self-updates use the PKG directly. This avoids breaking
+  older computers while removing the extra wrapper from the normal experience.
+
+### Fixed
+- **Windows package switches no longer pretend a different edition disappeared.**
+  A direct Global/Corporate package stops before changing anything when the
+  other scope is still registered or its exact native command remains, and
+  points to the managed installer that can request the right authorization.
+  It also checks ambiguous terminal-managed ownership before retiring an MSI or
+  EXE. Switching MSI ↔ EXE within the same edition remains automatic.
+- **Hosted Mac update checks now show their result reliably.** The tests use
+  their existing read-only GitHub access and record update output before making
+  the job pass or fail.
+
+## [4.1.3] - 2026-07-18
+
+### Fixed
+- **Global Windows updates no longer let the installer close the updater before
+  it can report the result.** TR-300 now uses one normal UAC prompt to preserve
+  the old Program Files command under a private name, reinstall only the same
+  MSI or EXE channel, verify the new command, and then remove the backup. A
+  failed or cancelled update retains or restores the working old installation
+  and prints the matching recovery path instead of switching formats or leaving
+  two active copies. v4.1.2's published files remain untouched; the correction
+  ships forward in v4.1.3.
+- **Release tests cover both the historical failure and the new transaction.**
+  The Windows matrix recognizes only the exact old Restart Manager termination,
+  waits for the matching installer it already launched, and still requires a
+  single correct install. It separately reruns the new Global worker and proves
+  the temporary backup is removed.
+
+## [4.1.2] - 2026-07-18
+
+### Fixed
+- **Mac update ownership now uses checks supported by current macOS.** The
+  installed command must match the exact Apple package receipt and also retain
+  TR-300's valid Developer ID signature and Team ID. This replaces a package
+  verification switch removed from current macOS, while preserving the rule
+  that a leftover receipt alone cannot claim a different binary. v4.1.1's
+  published files were left untouched and the correction moves to v4.1.2.
+- **Switching between MSI and EXE no longer trips over the old registration.**
+  The fresh Windows installer now reads the previous MSI identity correctly,
+  removes only the matching edition, and stops safely before changing files if
+  Windows cannot complete that removal.
+- **PowerShell installs and updates use the compatible PowerShell host.** This
+  avoids a module-loading conflict seen on clean GitHub Windows machines while
+  keeping the same script-install channel and folder.
+- **Windows release tests now perform real old-to-new updates.** Disposable
+  machines install the previous complete release, update each recognized
+  installer family in place, prove the second update is a harmless no-op, and
+  prove an older portable copy stays untouched while directing the user to the
+  fresh versionless download.
+- **User-scoped Windows updates can replace the command that launched them.**
+  Cargo, PowerShell, and Corporate installers temporarily preserve the running
+  command under a private backup name, install and verify the new command in
+  the same place, then remove the backup after the updater exits. If the update
+  fails, TR-300 restores the old working command and directs the user to the
+  matching fresh installer instead of leaving two active versions.
+
+## [4.1.1] - 2026-07-18
+
+### Fixed
+- **The universal Mac installer now completes on current GitHub Macs.** The
+  release job keeps its downloaded signed Mac builds through source checkout
+  and uses the argument order required by current Xcode when proving that the
+  installed command supports both Apple Silicon and Intel. We left v4.1.0's
+  published files untouched and released the correction as v4.1.1.
+- **Windows installer testing now follows the exact release across every
+  automation handoff.** The validation jobs no longer skip when GitHub changes
+  a chained workflow's branch context back to `main`; they recover the one
+  release attached to the exact successful build and stop if it is ambiguous.
+
+## [4.1.0] - 2026-07-18
+
+### Added
+- **Mac users now get a familiar universal DMG with a real Apple installer
+  inside.** It installs the versionless `tr300` command for the whole machine,
+  keeps an Apple package receipt for future updates, and must pass signing,
+  notarization, stapling, Gatekeeper, installation, and report checks on both
+  Apple Silicon and Intel cloud Macs before it can be published. A borrowed
+  physical Mac is no longer required to make a release.
+- **Hybrid Intel Windows machines show their real P-core/E-core layout.** On
+  the Alienware Core Ultra system, fast and full reports now correctly show
+  `6P + 10E` alongside 16 physical and 22 logical cores.
+
+### Changed
+- **Updates stay with the way you installed TR-300.** A Global MSI remains a
+  Global MSI, Corporate EXE remains Corporate EXE, Cargo remains Cargo, a
+  script install stays in its recorded folder, and the Mac DMG reopens Apple
+  Installer. On Mac, the receipt must actually claim the running file and
+  version and the command must retain TR-300's signed product identity—a
+  leftover receipt cannot hijack an update. When
+  Cargo and the script installer share a folder, the most
+  recently written install record wins; a tie is treated as unknown. TR-300
+  never guesses across installer types. If the origin is
+  portable, conflicting, or unknown, it keeps the working copy and directs you
+  to the fresh versionless installer instead.
+- **Fresh installer choices win.** Launching a different current Windows
+  installer is treated as the user's latest intent: the installer removes the
+  competing same-edition format before writing shared files and records the new
+  channel without leaving two active versions on PATH. A deliberately launched
+  older or same-version MSI also replaces the installed MSI instead of being
+  rejected—the fresh action is the user's newest instruction.
+- **Automation gets cleaner update results.** JSON is always one object and now
+  says which install channel was detected, where recovery lives, and whether a
+  person must act. Downloads are internally pinned to the release TR-300 just
+  checked, while public filenames, release-page links, and commands continue to
+  say `latest` and never embed a release number.
+- **Cloud validation is broader.** Every change now builds and tests on native
+  Apple Silicon, Intel Mac, x64 Linux, ARM64 Linux, and Windows, with workflow
+  and release-script checks included. Windows installer sources are compiled
+  before a release, and disposable Windows machines later install, update,
+  check, and uninstall every published installer family.
+- **The source repository now calls its primary branch `main`.** This matches
+  the rest of Emmett's repositories. The change keeps the same project history
+  and does not replace or alter any published downloads, installers, package,
+  or website content.
+- **The two everyday GitHub build workflows now use GitHub's current checkout
+  runtime.** This clears a deprecation warning before it can become a future
+  build problem; release and Windows packaging workflows already used the same
+  supported version.
+- **The project's architecture record now fully explains the recent work.** It
+  connects the cross-platform Rust design, fast versus detailed reports,
+  display/privacy rules, safe Windows install cleanup, Mac release protection,
+  and the `main` migration—including why alternatives were rejected and what a
+  future change must re-test.
+
+### Fixed
+- **Cancelled, blocked, or restart-pending installer updates no longer look
+  successful.** TR-300 keeps the previous installation, returns a failure code,
+  and shows the matching download and latest release page.
+
+### Internal
+- Windows build machines now compile every installer before a release and
+  rehearse both editions replacing a pretend newer MSI with the fresh release
+  candidate. Disposable machines then verify every published installer,
+  channel, recovery path, and uninstall independently.
+
+## [4.0.1] - 2026-07-15
+
+### Fixed
+- **Mac downloads can now complete their automatic signing step on GitHub's
+  clean Mac runners.** The first 4.0.0 release attempt stopped safely before
+  uploading anything when the runner could not find the newly imported signing
+  certificate. This patch makes that temporary certificate visible only while
+  signing, restores the runner immediately afterward, and double-checks that
+  the exact expected certificate ended up inside each binary. The failed 4.0.0
+  tag is kept as an honest historical record; 4.0.1 is the downloadable release.
+
+## [4.0.0] - 2026-07-14
+
+### Added
+- **Reports are saved only when you ask.** Ordinary `tr300` and `report` runs
+  now show information without creating a file. Use `-r`, `--report`, `-s`, or
+  `--save` when you want the same safe Markdown copy in Downloads.
+- **JSON reports explain their numbers more clearly.** Scripts can now see
+  whether collection was full or fast, distinguish physical cores from logical
+  processors, read exact uptime and OS build details, and understand what disk,
+  memory, frequency, and load values mean. Existing JSON fields still work.
+- **Mac reports contain substantially better native detail.** Full reports can
+  show the real boot state, FileVault, model, Apple chip and core layout, current
+  screen resolution, battery health/cycles, OS build/name, and terminal host.
+- **Mac downloads are now signed and checked by Apple automatically.** A release
+  cannot publish either Mac archive unless its Developer ID signature is valid
+  and Apple accepts it. This works even when the release is started from
+  Windows.
+
+### Changed
+- **The release number is 4.0.0, not 3.18.0.** Nothing breaks for
+  normal command-line use or existing JSON keys. The major number is for people
+  who embed TR-300's Rust library directly: its public information records grew
+  new fields, so Rust code that builds those records by hand needs a small
+  update. Marking that boundary honestly also makes future additions safer.
+- **JSON output is generated by a standard JSON encoder,** making unusual text
+  and missing values safer and more predictable without changing the schema
+  version.
+- **Slow or noisy helper commands cannot hold the whole report hostage.** Their
+  output and runtime are bounded, and failures simply leave an optional field
+  blank.
+- **Storage and memory figures now have consistent meanings.** The report uses
+  the actual system/root volume instead of adding unrelated drives together,
+  separates used space from space available to the current user, and matches
+  the way macOS accounts for active, wired, and compressed memory.
+- **Temporary self-update downloads are private, randomly named, size-limited,
+  and cleaned up** whether the update succeeds or fails.
+- **Updates stop cleanly when workplace security blocks a write or installer.**
+  TR-300 keeps the working version, stops making more write-heavy attempts,
+  explains what happened, includes official manual/release links in terminal
+  and JSON output, and returns failure instead of pretending the update worked.
+  It never offers an unsafe direct replacement path.
+
+### Fixed
+- **Mac available memory no longer says zero while the machine is only partly
+  used.** Used plus available now adds back up to total memory.
+- **Rosetta reports are explicit and honest.** They identify both the Apple
+  Silicon host and translated Intel process, retain the real Mac model/display/
+  battery information, and leave the misleading compatibility clock speed blank.
+- **Mac boot, battery, display, terminal, and login rows are cleaner.** The
+  report no longer calls “Apple Silicon” a boot mode, lists disconnected screens,
+  repeats graphics chips, shows raw battery prefixes, or treats a weekday as a
+  login address.
+- **Unknown stays unknown.** TR-300 no longer claims “Bare Metal,” physical core
+  counts, or time-windowed Windows load values when it does not have evidence.
+
+### Security
+- Normal reports no longer write a file at all. Reports you deliberately save
+  still never overwrite or follow an existing path.
+- Both Mac downloads carry the exact expected Developer ID/team signatures,
+  hardened runtime, trusted timestamps, and an Apple-accepted notarization
+  record.
+- Mac reports intentionally omit serial numbers, hardware UUIDs, and similar
+  unique device identifiers.
+- The locked dependency set is clear of known RustSec advisories.
+
+### Internal
+- Mac test, build, and speed results now block CI again, and the dependency
+  security audit is blocking too.
+- Native Apple Silicon and Rosetta suites, release builds, real report checks,
+  privacy checks, manual-save behavior, and an actual Apple notarization
+  round-trip passed on the local M2 MacBook Pro.
+- Windows code still cross-checks cleanly. Emmett explicitly chose to ship this
+  release before returning to the personal Alienware, AMD Linux laptop, and
+  Raspberry Pi 4; those checks stay on the board and any real mismatch becomes
+  a follow-up patch. The work machine's antivirus behavior is separate from the
+  personal Windows accuracy check.
+
+## [3.17.0] - 2026-06-08
+
+> One copy of TR-300, not several. On Windows you could previously end up with more
+> than one copy installed at once — an older one from the Rust package manager
+> sitting alongside a newer one from an installer, or both the "for everyone on this
+> computer" and the "just for me" editions side by side, with the wrong one quietly
+> winning. From now on the goal is one version, one edition at a time. (This brings
+> TR-300 in line with the same feature already in ND-300.)
+
+### Added
+- The Windows installers now offer two tidy-up options, both on by default: remove
+  an older leftover copy installed through the Rust package manager, and remove the
+  other edition if it's also installed. You can untick either during a normal
+  install. The cleanup is careful by design — it only ever removes TR-300's own
+  program, never your Rust toolchain (or anything else in that folder), never your
+  Downloads, and never the copy you're currently running. If removing the other
+  edition would need administrator rights you don't have, it skips that part and
+  tells you instead of failing. This same tidy-up also runs automatically during a
+  silent background update, so a routine update quietly consolidates you down to a
+  single, current install. It can never cause an install or update to fail — it's
+  strictly a helpful extra.
+- Updating keeps you on the same edition you chose: a "just for me" install updates
+  as a "just for me" install (in the same per-user location, no admin prompt), and a
+  "for everyone" install updates the same way — it never silently switches your
+  install style or where it lives.
+
+### Behind the scenes
+- Reuses TR-300's existing, already-tested "remove an install" machinery rather than
+  new deletion code, and mirrors ND-300's design exactly. macOS and Linux didn't
+  need any of this — an update there simply overwrites the single existing copy.
+
+## [3.16.0] - 2026-06-03
+
+> A stability and cross-platform cleanup pass. A fresh top-to-bottom review of
+> the whole program turned up a handful of correctness, robustness, and
+> packaging issues across every system TR-300 runs on (Windows, Mac, and Linux,
+> on both Apple/ARM and Intel chips), plus a focused look at why "update"
+> sometimes didn't work. The Mac- and Raspberry-Pi-specific fixes get a final
+> check on that hardware now that the work is live.
+
+### Added
+- **Windows now shows your computer's model** (like "Alienware m16 R2") in the
+  report — the same model line Macs and Linux machines already displayed.
+
+### Changed
+- **"Last login" is now left blank when it genuinely can't be determined**,
+  instead of printing the words "Login tracking unavailable." Anything reading
+  the data can now tell the difference between "we couldn't find out" and a real
+  answer — and "Never logged in" still shows when that's the true answer.
+- **When TR-300 saves its report file, it now tells you exactly what went wrong
+  if it can't.** Instead of a vague "couldn't save" message, it explains the
+  actual reason (no permission, disk full, folder missing) and lets you know
+  when it had to save to the current folder because no Downloads folder was
+  found.
+
+### Fixed
+- **The machine-readable report is always valid now.** In rare cases a stray
+  numeric value could have produced output that some tools would reject; those
+  values are now safely written as "empty" so the report always reads cleanly.
+- **TR-300 now builds correctly even in locked-down install environments.**
+  On some corporate or sandboxed machines the build could fail because it tried
+  to write a help-page file into a read-only folder; that write is now optional,
+  so installing from source works everywhere.
+- **Linux system-load readings are more honest.** If the system can't read its
+  load numbers cleanly, TR-300 now falls back to a second source instead of
+  silently showing "0%" (which looked like a totally idle machine).
+- **Macs show their version name again.** TR-300 now recognizes the latest macOS
+  ("Tahoe") and labels future versions sensibly. Before this, recent Macs showed
+  no version name at all because the list hadn't been updated.
+- **ARM-based Linux machines now show their real CPU speed.** On devices like a
+  Raspberry Pi, the processor speed used to read "0.00 GHz"; TR-300 now pulls the
+  true rated speed from the system instead.
+- **The graphics-card list on Windows stays clean in more situations.** A rarely
+  used fallback could show Windows' built-in placeholder display driver next to
+  your real graphics card; that's now filtered out everywhere.
+- **Windows is more careful about how your PC booted.** If TR-300 can't clearly
+  tell whether a machine started in modern (UEFI) or older (Legacy) mode, it now
+  leaves that line off instead of guessing "Legacy" and possibly being wrong.
+- **Single-processor Windows PCs now count their CPU correctly** in an
+  older-PowerShell fallback path.
+- **Laptop battery "health" on Linux is more accurate.** TR-300 now compares
+  like-for-like battery measurements when estimating wear, avoiding a nonsense
+  percentage on machines that report their battery data in mixed formats.
+- **Linux graphics detection is more precise.** An audio chip that happens to
+  have "Display" in its name is no longer mistaken for a graphics card.
+- **Storage-pool (ZFS) health warnings are ranked more sensibly on Linux.** A
+  fully stalled pool is now treated as the most serious state, and an unfamiliar
+  status is no longer reported as if it were a specific "degraded" warning.
+- **Installing TR-300 respects a symlinked shell config.** If your shell profile
+  (like `~/.bashrc`) is a symlink into a dotfiles folder — a common setup —
+  TR-300 now updates the real file and keeps your symlink intact, instead of
+  replacing it with a plain file.
+- **Updating TR-300 cleans up after itself.** On Windows, the downloaded
+  installer file is now removed automatically once the update finishes, instead
+  of piling up in your temp folder.
+- **Updating is more reliable and honest.** If the newest version isn't on the
+  package registry yet, TR-300 no longer falsely claims it updated — it
+  double-checks the version afterward and automatically falls back to
+  downloading the official prebuilt release instead. This fixes the case where
+  "update" appeared to work but the version never actually changed.
+- **A clearer message when update checks are temporarily blocked.** If you check
+  for updates many times in a short window, GitHub briefly rate-limits the
+  request; TR-300 now says exactly that and to try again shortly, instead of a
+  vague failure.
+
+### Internal
+- Tightened the automated test pipeline so it builds against the exact same
+  locked set of dependencies that the published release uses — closing a gap
+  where an incompatible dependency could have slipped through testing.
+- Restructured part of the self-update success check so it can be tested on
+  every platform, not just Windows.
+- Added automated tests that guard table alignment with international and emoji
+  text, and that confirm the updater refuses a tampered or corrupted download.
+
+## [3.15.3] - 2026-05-23
+
+> Cleanup release that picks up the three issues the May 2026 audit
+> deliberately left for later: a small CI safety check, a polish for
+> an unusual library use case, and a courtesy warning at install
+> time. The big audit is now fully landed.
+
+### Fixed
+- **Embedding TR-300 inside a graphical app is more reliable.** Some
+  desktop apps initialize Windows' COM subsystem in a way that
+  conflicted with how TR-300 was talking to Windows under the hood,
+  silently making the report fall back to a much slower data path.
+  TR-300 now isolates that work onto its own background thread, so
+  the report stays fast regardless of how the host app set things up.
+  Pure command-line users see no change.
+- **The Windows installer add-on workflow refuses to build against
+  an incomplete release.** Previously, if the main release pipeline
+  partially failed, the follow-on workflow would still try to attach
+  the corporate-edition installers and end up with a release missing
+  files. The workflow now checks that the main release actually
+  finished before doing any work, and fails fast with a clear
+  message if not — saving five minutes of wasted build time and
+  preventing a torn release from being published.
+- **`tr300 install` warns you if `report` is already defined.**
+  TR-300 adds a `report` shortcut to your shell so you can type
+  `report` instead of `tr300`. If you already had a `report` alias
+  or script set up, TR-300 used to silently shadow it. Now `tr300
+  install` checks your shell startup files and standard tool
+  locations first, and prints a one-time note showing exactly what
+  it found and where, so you can decide whether to keep your
+  existing `report` or let TR-300's take over. The install still
+  proceeds — you asked for it — but you get the heads-up.
+
+### Internal
+- Bundled a set of Anthropic-distributed agent skills into the
+  repository so any AI agent working on TR-300 picks up the same
+  thinking toolkit (brainstorming, critical thinking, architecture,
+  system design) without depending on the contributor's local setup.
+  No effect on the binary or on users.
+
+## [3.15.2] - 2026-05-18
+
+> Cross-platform audit + remediation release. An end-to-end read-only
+> audit of TR-300's install / update / runtime paths across macOS,
+> Linux, and Windows surfaced 22 real issues; this release ships
+> fixes for 19 of them. The remaining 3 are filed for future
+> releases (small CI hardening, an internal refactor for graphical
+> embedding, and a cosmetic alias-collision warning).
+
+### Security
+- **`tr300 update` now verifies a checksum on every downloaded
+  Windows installer before running it.** Until now, the update flow
+  trusted only HTTPS to GitHub. That's vulnerable to corporate
+  TLS-inspection proxies with a trusted root certificate, public
+  WiFi captive portals, and certain CDN tampering scenarios — an
+  attacker could substitute a trojaned installer that TR-300 would
+  then run, in the worst case (the Global EXE) with full admin
+  rights after one UAC click. The update flow now fetches the
+  installer's published `.sha256` companion file in a separate
+  request, computes the hash of what it downloaded, and refuses to
+  launch the installer on any mismatch.
+
+### Fixed
+- **Atomic profile writes prevent data loss on partial-write
+  failures.** When `tr300 install` or `tr300 uninstall` modified
+  your `~/.bashrc`, `~/.zshrc`, or PowerShell profile, the previous
+  code truncated the target file and then wrote — a Ctrl-C, power
+  loss, or antivirus quarantine in between would have left your
+  profile empty or partially written. All four sites now route
+  through a new atomic-write helper that writes to a side-by-side
+  temporary file, flushes it to disk, then atomically renames it
+  over the target. End result: your profile is either fully
+  replaced or completely untouched, never partial. The first
+  install also writes a one-time `.tr300-backup` copy of your
+  original profile so you have a recovery option.
+- **Profile sanity check refuses to mutate a damaged profile.**
+  The block-removal parser used by install and uninstall opens at
+  any line containing the TR-300 start marker and closes at any
+  line containing the end marker. If you ever hand-edited the end
+  marker out of your profile (a plausible mistake when tidying
+  shell config), the next `tr300 install` would have silently
+  dropped every line from the start marker to end-of-file — taking
+  the rest of your shell profile with it. Install and uninstall
+  now run a marker-balance check first and refuse the write on
+  imbalance with an actionable error explaining how to repair the
+  block by hand.
+- **Auto-run no longer spams "command not found" if `tr300` is
+  missing.** The snippet that runs `tr300 --fast` on every new
+  shell previously called the binary unconditionally — so if you
+  moved, deleted, or uninstalled `tr300`, every new terminal
+  session printed an error message until you found and removed
+  the snippet. The snippet now checks whether `tr300` exists on
+  the path before running it, so a missing binary fails silently
+  instead of nagging.
+- **Nested shells no longer re-render the report.** A small marker
+  is now set on the first auto-run in an interactive shell. Nested
+  shells (vim's terminal mode, scripts that launch sub-shells, a
+  Makefile's interactive bash, Windows Terminal's nested
+  PowerShell tab) inherit it and the snippet short-circuits,
+  preventing the table from being printed multiple times in CI
+  logs and editor terminals.
+- **More accurate interactive-session detection on Windows.** The
+  PowerShell snippet now uses the documented "real user session"
+  check instead of an older host-name match that was tripping on
+  PowerShell calls from CI, VS Code, and scheduled tasks. Stops
+  the report from rendering into non-interactive log streams.
+- **`tr300 install` now writes to both PowerShell 5.1 and
+  PowerShell 7 profiles when both are installed.** The two
+  PowerShell flavors keep separate profile files and don't read
+  each other's. Previously, users running only PowerShell 7 got a
+  silent no-op install — the snippet went to a profile their
+  shell never read. The installer now probes both shells, writes
+  to whichever profiles exist, and deduplicates if they overlap.
+- **More accurate locale detection on Unix.** TR-300 decides
+  whether to render its table with Unicode box-drawing characters
+  or fall back to ASCII based on the user's locale environment
+  variables. The previous logic had an asymmetric quirk that
+  meant some unusual configurations (like `LC_ALL` set to a
+  non-UTF-8 European locale while `LANG` was UTF-8) returned the
+  wrong answer. The check is now strict about POSIX precedence:
+  the highest-priority variable wins outright.
+- **Version comparison correctly handles pre-release tags.** A
+  rare edge case: a user manually installed a pre-release like
+  `v3.15.2-rc.1` and then ran `tr300 update`. The old comparator
+  silently treated the pre-release tag the same as the stable
+  release of the same version, so the user got "already on
+  latest" and was stuck. The comparator now follows the standard
+  semver rules: a stable release is newer than its own
+  pre-release, and a pre-release of a higher version is newer
+  than the prior stable.
+- **`tr300 update` no longer reports a false success when the
+  installer didn't actually replace the binary.** The Windows
+  Installer can exit with success but defer the file replacement
+  until reboot, particularly if another copy of `tr300` is open
+  in another shell. The update flow now re-checks the version of
+  the on-disk binary after the installer finishes and reports a
+  clear "reboot, then verify" message instead of claiming the
+  upgrade succeeded.
+- **The Corporate EXE installer no longer leaves a stranded PATH
+  entry on uninstall.** When TR-300's `bin` directory happened to
+  be the very first entry in your PATH (most common on fresh
+  corporate workstations where the user PATH was previously
+  empty), uninstalling left the entry behind because of an
+  off-by-one bug in the Pascal-Script PATH editor. The Global EXE
+  installer had the same bug; both are fixed.
+- **Windows console no longer leaks UTF-8 mode after TR-300
+  exits.** On Windows, TR-300 switches the console output code
+  page to UTF-8 while it runs so the box-drawing characters
+  render correctly. The previous code never put the code page
+  back — every subsequent program in the same console window saw
+  UTF-8 output, which occasionally broke legacy batch scripts.
+  The code page is now saved at startup and restored when
+  TR-300 exits.
+- **`tr300 install` on Unix refuses to run as root.** Some users
+  reflexively ran `sudo tr300 install` thinking it was a
+  system-level installer. It isn't — TR-300 modifies your personal
+  shell profile, and running as root either wrote the change into
+  root's profile (so it never reached the user) or left
+  root-owned files in your home directory that broke the next
+  non-sudo `tr300 install`. The command now refuses with a clear
+  message pointing at `cargo install tr300` or the MSI/EXE
+  installers for anyone who wants a system-wide install.
+- **`tr300 install` on macOS now creates `.zshrc` instead of
+  `.bashrc` on fresh user accounts.** macOS has used zsh as the
+  default shell since 2019. On a fresh account with neither rc
+  file present, the previous install created `.bashrc` — which
+  the user's actual zsh shell never read, so the auto-run
+  silently never fired.
+- **`tr300 uninstall` -> Complete now works when run from the
+  Corporate EXE install location.** Choosing "Complete" from
+  `%LocalAppData%\Programs\tr300\bin\tr300.exe` previously
+  cleaned the PowerShell profile but failed to delete the binary
+  with a confusing error — Windows refuses to delete a running
+  executable. TR-300 now detects this case and hands the
+  deletion off to a small background script that runs after
+  `tr300` exits, cleaning up the binary and its parent folder
+  within a couple seconds. The shell returns to a prompt
+  immediately.
+- **TR-300 no longer hangs on machines with a broken WMI
+  service.** Several Windows data sources (BitLocker status,
+  multi-socket detection, network adapter info, cold-boot time)
+  read through Windows' WMI subsystem. On machines where WMI is
+  wedged (after certain Windows updates, on tightly-managed
+  corporate fleets, or when antivirus interferes with the
+  security-namespace queries), those calls used to block for
+  tens of seconds with no escape hatch. Each WMI call now has a
+  5-second timeout — the affected field is reported as missing
+  instead, and the rest of the report renders normally.
+- **Stronger JSON output guarantees.** The JSON output's string
+  escaping is now produced by the standard `serde_json` library
+  instead of a hand-rolled implementation. The hand-rolled
+  version was correct for the cases it covered, but the swap
+  eliminates a maintenance hazard and locks in spec-compliant
+  behavior across the full Unicode range.
+- **More accurate disk reporting on Windows configs with mounted
+  folders.** A previous string match was too loose and could
+  count a junction-mounted directory (a "folder shortcut"
+  pointing at another drive) as if it were the C: drive itself.
+  The check is now tightened to match exactly the system drive
+  root.
+- **Language-independent socket count and login-history parsing
+  on Linux.** A few subprocesses TR-300 runs to gather data
+  (`lscpu`, `lastlog`, `last`) translate their column labels
+  into the user's language — German users saw "Sockel:" instead
+  of "Socket(s):" and the parser silently missed multi-socket
+  detection. These calls now run in the C (English) locale so
+  the parsers work the same way regardless of the user's
+  display language.
+
+### Changed
+- **Internal: shared installer constants and parser extracted to a
+  single module.** The marker strings and block-removal logic used
+  by `tr300 install` and `tr300 uninstall` were previously
+  duplicated between the Unix and Windows code paths. Both now
+  reference a shared module so a future rename touches one file.
+
+### Documentation
+- The project's minimum Windows version is now documented as
+  Windows 10 1511 (2015). Older Windows (Windows 7 / Server 2008
+  R2) can't load TR-300 at all because of a system-API change;
+  the limit is moot in practice because Rust itself dropped
+  Windows 7 a year ago, but it's now written down.
+
+### Tests
+- **26 new unit tests** across the install, update, and report
+  paths exercise the atomic-write helpers, marker-balance check,
+  snippet content pinning, semver prerelease ordering, checksum
+  sidecar parsing, and JSON escape round-tripping. The library
+  test count went from 72 to 98.
+
+## [3.15.1] - 2026-05-15
+
+> **Status:** This is the first published release of the new four-installer
+> Windows distribution model. The version on `cargo install tr300` was
+> already correct as of v3.15.0; this release is what makes all four
+> direct-download Windows installers visible on the GitHub release page.
+
+### Fixed
+- **First successful publication of the four Windows installer
+  formats.** The previous attempt (v3.15.0) shipped successfully to
+  `cargo install tr300` but the GitHub Release builder failed before
+  it could publish the Windows MSI and EXE installers. Two unrelated
+  build issues had to be fixed: an empty-string property in the
+  Corporate MSI's source file that the build tool rejected, and a
+  directory layout problem that caused the build to try to merge the
+  Global and Corporate MSI definitions into a single output file.
+  Both are now resolved. The v3.15.0 tag stays in history as a
+  record of the failed attempt; this release is what users see as
+  the first publication of the four-installer model.
+
+### Internal
+- **Future releases trigger the Windows installer build automatically.**
+  A separate fix to the release workflow means v3.15.2 and onward
+  produce all four Windows installers without anyone having to
+  re-fire the workflow by hand. (For v3.15.1 itself, the additional
+  Corporate MSI + Global EXE + Corporate EXE installers had to be
+  attached retroactively via a manual workflow re-fire after the
+  trigger fix was committed.)
+- **Argument-quoting fix in the Windows installer workflow.** The
+  first re-fire of the fixed workflow failed because PowerShell's
+  argument tokenizer was splitting one of the version arguments at
+  the period. A small quoting fix in the build script resolved it,
+  and the workflow now produces the final 6 installer assets
+  cleanly.
+
+## [3.15.0] - 2026-05-14
+
+> **Status:** Shipped to `cargo install tr300` but the matching
+> GitHub Release page is missing the Windows installer files because
+> the release builder failed. Users tracking the GitHub release page
+> should use v3.15.1 instead, which is the first version with all
+> four installers actually published.
+
+### Added
+- **Four first-class Windows installers per release.** Starting with
+  this version, every TR-300 release on Windows ships in four
+  flavors so you can pick the one that fits your environment:
+  - **Global MSI** — the traditional `setup.msi`. Installs to
+    `C:\Program Files\tr300\`, modifies system PATH, requires admin
+    rights. Best for personal machines and IT-managed deployments.
+  - **Corporate MSI** — a no-admin MSI that installs to your user
+    profile (`%LocalAppData%\Programs\tr300\`) and only modifies
+    your user PATH. Best for locked-down work machines where you
+    can't install software to `Program Files`.
+  - **Global EXE** — a familiar `setup.exe` installer, same outcome
+    as the Global MSI but in Inno Setup format if you prefer that
+    over the Windows Installer service.
+  - **Corporate EXE** — the same no-admin user-scope install as the
+    Corporate MSI, in `setup.exe` form.
+  Every release now publishes 28 GitHub assets (was 22).
+- **Decision table in the README** to help you pick between Global
+  and Corporate Edition based on whether your machine is locked
+  down.
+
+### Changed
+- **`tr300 update` now picks the right installer to re-run.** On
+  Windows, the update command checks which of the four installers
+  you used and downloads the matching one for the upgrade. Users on
+  `cargo install` or the older PowerShell one-liner installer keep
+  updating the way they always have.
+- **README install section rewritten.** Leads with direct-download
+  links for the four Windows installers grouped by edition.
+  `cargo install tr300` is demoted to a "build from source" section
+  labeled for developers.
+- **Self-update section in the README rewritten** with a table
+  showing what happens for each install path, including instructions
+  for handling the Windows SmartScreen "More info → Run anyway"
+  prompt on unsigned binaries.
+
+## [3.14.5] - 2026-05-14
+
+### Changed
+- **Windows install errors now explain the most likely cause.** When
+  `tr300 install` or `tr300 uninstall` fails to write to your shell
+  profile or remove the binary, the error message now includes a
+  multi-paragraph advisory tailored to the cause: OneDrive sync
+  state ("ensure Documents is locally available, not online-only"),
+  Active Directory / Intune / AppLocker / WDAC / antivirus
+  restrictions with a Windows `takeown` example, sharing-violation
+  conditions, disk-full, and path-too-long errors each get their own
+  remediation text. Every error message ends with a note that manual
+  `tr300` invocations still work — so you know the binary itself is
+  fine and only the auto-run on new shells needs to be retried once
+  the underlying restriction is sorted.
+
+## [3.14.4] - 2026-05-14
+
+### Fixed
+- **PowerShell auto-run actually fires on fresh Windows machines.**
+  Out of the box, Windows ships with PowerShell script execution
+  disabled — which silently blocked the auto-run that
+  `tr300 install` adds to your profile. Opening a new PowerShell
+  session printed a "running scripts is disabled on this system"
+  error instead of the TR-300 table. The installer now checks the
+  current execution policy before writing your profile and, if it's
+  locked at the default, runs the minimum-permissions fix to allow
+  your local profile to load. This change is user-scope only — no
+  admin rights needed, and it doesn't weaken protection against
+  unsigned scripts downloaded from the internet. If you've
+  deliberately set the strictest policy, the installer leaves it
+  alone and prints a one-time notice explaining the auto-run won't
+  fire. If Group Policy overrides what we can change, the installer
+  prints a fallback warning. Either way, the manual `tr300` command
+  still works.
+
+### Changed
+- **Documentation consistency pass.** Rechecked the full
+  documentation set for stale wording about installation, releases,
+  and updates after the previous version, and brought every
+  reference into line.
+
+## [3.14.3] - 2026-05-11
+
+### Changed
+- **The crates.io package is now called `tr300`** (no hyphen),
+  matching the binary name. Install via `cargo install tr300`. Older
+  binaries from the previous release still update correctly because
+  the previous installer filenames are kept as aliases on every
+  release.
+- **Self-update path updated** to use the new `tr300` package name
+  and installer URLs. Users on the older PowerShell or shell
+  installers transparently fall through to the working installer.
+- **Documentation alignment.** Refreshed all install and release
+  docs to use the new `tr300` package name consistently.
+
+### Internal
+- **Release publication status.** Successfully published `tr300`
+  v3.14.3 to crates.io and the GitHub Release page after the
+  canonical `tr300` package name was confirmed available.
+
+## [3.14.2] - 2026-05-11
+
+### Added
+- **TR-300 is now on crates.io.** You can install it with the
+  standard `cargo install` workflow alongside the existing shell
+  installers and MSI. The published package contains only the files
+  actually needed for the install.
+- **Automatic crates.io publishing on every release.** When a new
+  version passes the regular CI checks, a separate workflow
+  publishes it to crates.io automatically. Versions that are already
+  on crates.io are skipped, so the workflow is safe to re-run.
+- **Project identity cleanup.** Removed historical files unrelated
+  to TR-300 and clarified that TR-300 is a standalone project.
+
+### Changed
+- **Self-update tries multiple paths in order.** When you run
+  `tr300 update`, the tool now tries `cargo install` first if Cargo
+  is available, then falls through to the shell or PowerShell
+  installer. Each attempt's outcome is reported to you, in both
+  terminal and JSON output, so it's clear which path worked and
+  which didn't.
+- **JSON update output is more detailed.** Successful updates
+  include exactly which strategy succeeded; failures include an
+  array of every attempted strategy with diagnostics.
+- **README install section refreshed.** Covers every supported
+  install method (Cargo, shell installer, PowerShell installer, MSI,
+  exact Git tag, and source builds) and documents the new automatic
+  crates.io publishing flow. Wording around Windows session and
+  BitLocker behavior was narrowed to match what's actually
+  implemented.
+- **Release workflow docs updated.** The local agent guides now
+  describe the new release flow: bump version, update changelog and
+  docs, run local release checks, push the default branch, wait for
+  CI, let crates.io publishing run, then push the version tag for
+  the GitHub Release page.
+
+### Internal
+- **Release publication status.** Published v3.14.2 to crates.io
+  and the GitHub Release page successfully. (An initial attempt
+  failed because the crates.io version-check request didn't
+  identify itself properly to crates.io; a follow-up fix made the
+  publish workflow include a descriptive user-agent.)
+
+## [3.14.1] - 2026-05-11
+
+### Fixed
+- **Confidence patch after the previous version's CI fix.**
+  Re-released the v3.14 line after confirming the latest changes
+  passed all local and CI checks. Republishes the cross-platform
+  collector fixes from v3.14.0.
+
+### Internal
+- **Release metadata refresh.** Updated package metadata, project
+  status documents, and the bundled man page for v3.14.1.
+- **Release publication status.** v3.14.1 was published successfully
+  to the GitHub Release page with 20 installer assets.
+
+## [3.14.0] - 2026-05-10
+
+### Added
+- **Positional command syntax.** `tr300 update`, `tr300 install`,
+  and `tr300 uninstall` now work as bare subcommands — no
+  double-dash needed. The older `--update`, `--install`, and
+  `--uninstall` flags keep working too, and the installed `report`
+  alias inherits the new syntax (so `report update` also works).
+  Mixing the two styles in one command, like
+  `tr300 update --install`, is rejected with a clear error.
+- **Optional report rows on supported platforms.** TR-300 now
+  collects (and renders, when available) machine model, CPU core
+  topology, motherboard, BIOS, and a RAM-slot summary. The rows
+  render only when the collector can populate them, so existing
+  platforms see no change.
+
+### Changed
+- **Cross-platform collector hardening.** A new shared internal
+  helper enforces timeouts on every external command TR-300 runs to
+  gather data. Missing tools, blocked subprocesses, and bad platform
+  responses now degrade to an omitted row instead of hanging the
+  whole report. Several rendering bugs were also fixed: non-finite
+  percentages no longer crash the table, disk aggregation no longer
+  overflows on enormous arrays, the markdown report escapes
+  table-breaking characters, and Windows time fields are copied
+  before decoding to prevent a rare data-corruption case.
+- **Platform accuracy improvements.** macOS got better detection of
+  model, hostname, locale, Rosetta, Apple Silicon CPU frequency,
+  performance/efficiency core split, battery health, and a
+  memory-status fallback. Linux got better default-route IP,
+  systemd-resolved DNS, locale, battery, terminal, container / VM /
+  WSL detection, ARM CPU detection, ZFS info, and the elevated
+  hardware-info flow. Windows got a batched PowerShell fallback for
+  the cases where the primary WMI pathway fails, while keeping fast
+  mode free of those slow calls.
+- **Windows elevation footer wording.** The hint at the bottom of
+  the table now only advertises data that's actually implemented for
+  elevated Windows runs (BitLocker status). Admin-only Remote
+  Desktop login history remains deferred to a future release.
+
+### Internal
+- **Documentation restructure** (no behavior change). Moved
+  long-form rationale for six load-bearing internal decisions out of
+  the AI agent guide and into a new architecture-decisions document.
+  The AI agent guide keeps the edit-time rules (what to do, what not
+  to undo); the new document keeps the why.
+
+## [3.13.1] - 2026-04-29
+
+### Fixed
+- **GitHub Release page is publishing assets again.** Since the
+  v3.10.0 release, the GitHub Release page hadn't been receiving new
+  artifacts because three of the six platform builds were failing
+  on the build runners' pre-installed compiler — it was one minor
+  version too old to meet TR-300's requirement. The fix pins the
+  exact compiler version that gets installed on every build runner,
+  so local builds, CI, and release builds all use the same
+  toolchain. v3.13.1 is the first release with a working GitHub
+  Release page since v3.10.0 — the `irm | iex` and `curl | sh`
+  one-liners now resolve to a current binary instead of falling
+  back to the stale v3.10.0.
+
+## [3.13.0] - 2026-04-28
+
+### Added
+- **More informative battery row on Windows.** The battery line in
+  the report now matches what you'd actually want to know at a
+  glance. When you're plugged in and topped up (≥ 95%, not actively
+  charging), the row just says `AC Power` — the percentage adds
+  noise. When charging, it says `X% (Charging)`. When plugged in
+  but the battery is below 95% and not charging — common on gaming
+  laptops whose discrete GPU outpaces the power brick, and on
+  workstation laptops with battery-longevity firmware modes that
+  cap charge at 60–80% — it says `X% (Plugged in)` so you can see
+  the state regardless of which path your laptop uses. Off AC, you
+  see the classical `X% (Charging / Critical / Low / Discharging)`
+  labels. Replaces the previous output of `100% (AC Power)` (always
+  showed the percentage even when meaningless) and
+  `100% (Discharging (High))` (a confusing legacy label).
+- **PowerShell 7+ detection on Windows.** Users running modern
+  PowerShell see the installed `PowerShell 7.x.y` version instead
+  of always seeing `PowerShell 5.1` or a bare `PowerShell` fallback.
+- **Terminal detection now walks the process tree on Windows.**
+  When TR-300 can't recognize the terminal from environment
+  variables alone (common when launched from a desktop shortcut, a
+  fresh subshell that lost its parent's environment, or from an AI
+  agent), the tool now climbs the process tree to find the actual
+  terminal emulator. Recognizes Windows Terminal, WezTerm,
+  Alacritty, VS Code, Cursor, Windsurf, Hyper, Tabby, Ghostty,
+  Kitty, MinTTY, Claude Code, and Antigravity. Intermediate shells
+  and command hosts are skipped so the walk reaches the real
+  terminal. Unrecognized terminals quietly fall back to `Console`.
+
+### Changed
+- **Native CPU socket count on Windows.** Replaces the older
+  WMI-based count path with a faster native Windows API call. The
+  WMI fallback stays in place as a safety net.
+- **Native battery detection on Windows.** Replaces the older
+  WMI-based battery query with a faster native Windows API call.
+  WMI and PowerShell fallbacks stay in place.
+- **GPU enumeration prefers the registry path in full mode on
+  Windows.** Historically, the full report sometimes listed phantom
+  adapters like "Microsoft Basic Render Driver" alongside the real
+  hardware. The faster registry-based path used by `--fast` mode
+  only enumerates real hardware adapters, so the full report now
+  uses it too. A name-based filter strips known software adapters
+  as a belt-and-suspenders measure. Verified on a host with three
+  real GPUs — all three appear, no software phantoms.
+
+### Performance
+- **`--fast` median time on Windows: ~340 ms** on a modern Intel
+  laptop — well under the 1.5 second CI budget. The 30 ms increase
+  versus the previous baseline is from the new Windows API surface
+  area; the actual collectors are equal or faster.
+
+## [3.12.0] - 2026-04-28
+
+### Changed
+- **VPN-aware network detection on Windows.** TR-300's report on
+  Windows now asks the kernel which network interface would
+  actually carry traffic to the public internet, instead of picking
+  the first available interface. On hosts running Tailscale,
+  WireGuard, OpenVPN, Cisco AnyConnect, or any other tunnel that
+  steals the default route, the `MACHINE IP` and `DNS IP` rows now
+  reflect the tunnel — what you'd actually use to reach the
+  internet — rather than a coin-flip pick from whichever virtual
+  adapter happens to be enumerated first. Falls back to the
+  previous behavior on hosts where the kernel lookup fails.
+- **Fast Startup-aware uptime on Windows.** Windows laptops with
+  Fast Startup enabled (the default) don't actually shut down on
+  "shut down" — they hibernate and resume, so the kernel uptime is
+  the resumed-session age, not since-power-on. Until now this
+  caused confusion ("wait, I restarted three days ago, why does
+  this say 47 days?"). The `UPTIME` row now renders as
+  `9d 4h 12m (session: 7h 14m)` when the two values disagree by
+  more than an hour — the long form is time since you actually
+  cold-booted, and the parenthetical is the current session. Both
+  values are correct and meaningful; surfacing both eliminates the
+  surprise. Skipped in `--fast` mode to keep startup quiet.
+- **CI no longer waits on Intel Mac runners.** The hosted runner
+  pool for Intel macOS x86_64 is effectively retired — recent CI
+  runs sat queued for 3+ hours (one for nearly 16) waiting
+  exclusively on Intel macOS while every other platform finished
+  in minutes. Apple Silicon CI continues to test every line of the
+  macOS code (the platform code isn't architecture-specific), and
+  the GitHub Release page continues to ship an Intel Mac binary at
+  every release, so any user on 2019/2020-era Intel hardware still
+  gets a working binary download. CI is faster on every push;
+  releases still produce the artifact.
+
+### Fixed
+- **Network destination byte order on Windows.** Caught during an
+  independent code review: the new VPN-aware route lookup happened
+  to work for 1.1.1.1 (palindromic IP) but would have routed to the
+  wrong IP for any non-palindromic destination. Fixed before
+  release.
+
+### Internal
+- **New session-uptime optional field** propagated through the
+  codebase, reserved for future expansion to macOS and Linux
+  session-vs-uptime nuance if that proves worth surfacing.
+
+## [3.11.1] - 2026-04-27
+
+### Security
+- **Migrated off an unmaintained dependency** to its maintained
+  fork. Clears three Rust security advisories — one was a real
+  vulnerability with no upgrade available on the original; the
+  other two were unmaintained-crate warnings. Unix-only dependency,
+  so Windows is unaffected.
+
+### Changed
+- **Minimum required Rust version bumped.** Users on the standard
+  `cargo install` workflow now get a clear "requires newer Rust"
+  message instead of a confusing build failure when their toolchain
+  is too old. The bump lets TR-300 drop several unsafe blocks
+  around CPU-info calls that the newer Rust marked safe-to-call.
+  Run `rustup update stable` before `cargo install tr300` if you
+  hit the error.
+- **Self-update now auto-refreshes Rust** when invoked via the
+  `cargo install` path. If `rustup` is on your PATH, TR-300 runs
+  `rustup update stable` before re-installing itself so the new
+  build always meets the version requirement. Best-effort — no
+  `rustup` means no-op, errors are non-fatal.
+
+### Fixed
+- **CI is green again on the new Rust version.** The newer
+  compiler promoted several lints to warnings, and TR-300's strict
+  "warnings are errors" policy was rejecting them. Cleaned up
+  fifteen sites across the install, collector, and platform code
+  with no behavior change.
+
+## [3.11.0] - 2026-04-27
+
+### Added
+- **Windows BitLocker status.** New `ENCRYPTION` row in the report
+  when readable on Windows 11 Device Encryption laptops. Shows
+  `BitLocker On (XTS-AES-256)` or `BitLocker Off`. Works without
+  admin on most modern Windows 11 hosts; gracefully absent on older
+  Windows 10 or domain configurations where the elevation footer
+  hint covers the gap. Also visible in JSON output.
+- **Windows last-login** now shows the actual session start instead
+  of "Login tracking unavailable". Uses the documented Windows
+  session API for Remote Desktop and network logons, falling back
+  to the system boot time for local console sessions where Windows
+  leaves the session timestamps at zero.
+
+### Changed
+- **Windows OS detection** now reads the registry directly.
+  Correctly detects Windows 11 by build number (the registry says
+  "Windows 10" even on Windows 11), and the kernel version now
+  includes the display version (e.g. `25H2`) and update build
+  revision so you can tell which servicing channel you're on.
+- **Windows architecture detection** now reports the real machine
+  architecture, even when TR-300 is running under emulation. So an
+  x64-built binary on a Surface Pro X correctly reports
+  `aarch64 (x86_64 emulation)`.
+- **CPU frequency on Windows** now combines three sources — the
+  CPU's silicon-rated boost frequency, the active power plan
+  ceiling, and the static base — and uses whichever is highest.
+  This is honest about throttling (Battery Saver users see the
+  real ceiling, not the silicon max) and works correctly on Intel
+  hybrid chips where the silicon-rated value reads as zero.
+- **Hypervisor detection** is now fast and reliable across KVM,
+  Hyper-V, VMware, VirtualBox, Xen, QEMU, Parallels, and others.
+  On Windows 11 with Virtualization-Based Security enabled (where
+  the kernel runs atop a thin Hyper-V layer on real hardware), the
+  row is correctly labeled `Bare Metal (Hyper-V/VBS)` rather than
+  the misleading `Hyper-V`.
+
+### Deferred to a follow-up
+- VPN-aware default route detection and Fast Startup uptime
+  annotation were split into a follow-up release — the existing
+  network and uptime paths continue to work; these are accuracy
+  refinements rather than bug fixes.
+
+## [3.10.0] - 2026-04-27
+
+### Added
+- **Elevation tier scaffolding.** TR-300 now detects whether it's
+  running with elevated rights (root on Unix, administrator on
+  Windows) and surfaces this in the JSON output. On platforms where
+  running elevated would unlock additional data, the table shows a
+  one-line hint at the bottom — Linux: "Run with sudo for
+  motherboard, BIOS, and RAM slot details"; Windows: "Run as
+  Administrator for BitLocker status". macOS shows no hint because
+  there's no equivalent unlock on Apple platforms. The hint only
+  appears on manual full-mode runs, never during the `--fast`
+  auto-run.
+- **`--no-elevation-hint` flag** to suppress the footer hint for
+  users who find it noisy.
+- **JSON schema version, elevation, and unlock-more fields** for
+  programmatic consumers. The schema version bumps only on breaking
+  changes; additive new fields don't trigger a bump.
+
+### Changed
+- **TR-300's library now exposes elevation helpers** for callers
+  building their own elevation-aware UI on top of the collected
+  system info.
+
+### Internal
+- **Foundation for upcoming per-platform accuracy work.** No
+  collector changes land in this release; this is the scaffold that
+  the v3.11–v3.13 platform-accuracy releases build on.
+- **Comprehensive CI.** New workflow runs on every push and pull
+  request: format check, lint with warnings-as-errors, tests across
+  Linux + macOS Apple Silicon + macOS Intel + Windows, release-build
+  smoke tests, an auto-run speed-budget gate (fails if `--fast`
+  median exceeds 1.5 seconds), dependency security audit, and a
+  release-workflow plan verification.
+- **Codified development workflow** in the AI agent guide and saved
+  as a project memory: seven phases from planning through
+  publication, applied for every non-trivial change.
+
+## [3.9.0] - 2026-04-12
+
+### Added
+- **`tr300 --update` command.** Check for and install the latest
+  version directly from the command line. TR-300 detects whether
+  you installed via `cargo install` or the shell/PowerShell
+  installer and picks the right update method automatically.
+  Supports `--json` output for scripted update checks.
+
+### Fixed
+- **Shell installation works on Raspberry Pi OS again.** The
+  installer was using bash-specific syntax that broke on systems
+  where `/bin/sh` is dash (most Raspberry Pi installs and minimal
+  Debian images). Switched to POSIX-compatible syntax that works
+  everywhere.
+
+## [3.8.0] - 2026-03-21
+
+### Added
+- **Automatic Unicode-or-ASCII detection.** TR-300 now checks your
+  terminal's locale at startup to decide whether to render the
+  table with Unicode box-drawing characters or fall back to ASCII.
+  If your locale doesn't support UTF-8 (e.g. `C`, `POSIX`, or an
+  older single-byte encoding), the tool automatically uses ASCII
+  characters instead. This makes the report readable out of the
+  box on Raspberry Pi OS, headless Linux servers, Docker containers,
+  minimal Debian installs, and SSH sessions where locale forwarding
+  fails — all of which previously rendered the table as garbled
+  mojibake with broken borders.
+
+  Users with properly configured UTF-8 locales (the vast majority
+  of modern desktop Linux, macOS, and Windows systems) see no
+  change. The `--ascii` flag still works to force ASCII mode
+  regardless of locale, and fixing your locale with
+  `export LANG=en_US.UTF-8` continues to give you Unicode output.
+
+## [3.7.0] - 2026-03-12
+
+### Changed
+- **Table alignment now handles CJK and emoji characters correctly.**
+  The renderer now uses Unicode display width to figure out where
+  columns line up, so terminals with wide East Asian characters and
+  emoji render the table with the right column widths.
+
+### Fixed
+- **Various crash fixes.** Fixed a potential crash in the macOS
+  battery collector on empty status strings; collector failures now
+  degrade gracefully instead of crashing the whole report; JSON
+  output now produces valid JSON when system info contains control
+  characters; the legacy PowerShell profile cleanup no longer
+  miscounts braces inside comments.
+
+### Removed
+- **Dead code removed** to keep the codebase tidy.
+
+### Added
+- **Man page now bundled with every build.** The build script
+  generates a `tr300.1` man page automatically.
+
+## [3.6.0] - 2026-02-22
+
+### Added
+- **Auto-save markdown report to your Downloads folder.** On manual
+  full-mode runs (running `tr300` or `report` without `--fast` or
+  `--json`), TR-300 now writes a comprehensive markdown copy of the
+  report to your Downloads folder so you can share it or paste it
+  into a ticket. Non-fatal — if the write fails, you still get the
+  terminal report.
+
+## [3.5.0] - 2026-02-09
+
+### Added
+- **GPU info in `--fast` mode.** TR-300's fast-mode auto-run now
+  includes GPU rows. On Linux this uses existing fast tools; on
+  Windows a new registry-based GPU detection avoids the slower WMI
+  and PowerShell paths; on macOS a new fast detection uses system
+  tools instead of the slower system profiler.
+
+### Changed
+- **Auto-run reports now include GPU rows** by default.
+
+## [3.4.0] - 2026-02-09
+
+### Added
+- **`--fast` flag for sub-second startup in auto-run mode.** Skips
+  the slower data sources on each platform: Windows skips all WMI
+  and PowerShell calls; macOS skips the system profiler; Linux
+  already runs almost instantly. The auto-run installer now uses
+  `tr300 --fast` so opening a new terminal shows the table
+  immediately. The manual `report` alias still runs the full
+  report.
+- **Direct WMI calls on Windows** instead of spawning PowerShell
+  subprocesses for GPU, battery, Windows edition, virtualization,
+  and network info. PowerShell fallbacks remain for the rare case
+  where the Windows WMI service is wedged.
+- **Native Windows API calls** for display resolution and locale
+  instead of PowerShell.
+- **Registry-based PowerShell version detection** replaces spawning
+  PowerShell to ask its own version.
+- **Parallel collection.** All seven collectors (OS, CPU, memory,
+  disk, network, session, platform) now run concurrently. CPU
+  measurement now overlaps with other collectors instead of holding
+  up the whole report.
+
+### Changed
+- **Full report on Windows is 10× faster** (about 500 ms, down
+  from 5–7 seconds).
+- **Fast mode on Windows is 22× faster** than the original (about
+  250 ms).
+- **macOS system profiler called once instead of twice** — GPU and
+  resolution are both parsed from a single call.
+- **Some report fields are now optional**, so fast mode can cleanly
+  omit data sources it skipped instead of showing blanks or zeros.
+
+## [3.3.0] - 2026-02-03
+
+### Added
+- **Interactive uninstall prompt.** Running `tr300 --uninstall` now
+  shows three choices: (1) remove only the shell profile
+  modifications, (2) remove the modifications and delete the
+  TR-300 binary itself, or (0) cancel. Choice (2) also removes the
+  (now-empty) installation directory on Windows.
+
+### Changed
+- **`--uninstall` is no longer immediate.** A confirmation prompt
+  prevents accidental complete removal.
+
+## [3.2.0] - 2026-02-03
+
+### Changed
+- **License changed from BSD 3-Clause to PolyForm Noncommercial
+  1.0.0.** Personal use, research, hobby projects, charitable
+  organizations, educational institutions, public research
+  organizations, and government agencies are all explicitly
+  permitted. Commercial use requires a separate license agreement.
+
+## [3.1.0] - 2026-02-03
+
+### Added
+- **GPU information.** Shows the GPU name(s) in the CPU section —
+  one row per GPU if you have three or fewer, a compact
+  comma-separated list otherwise.
+- **System architecture row** (x86_64, aarch64, etc.) in the OS
+  section.
+- **Shell name and version, terminal emulator, and system locale**
+  in the session section.
+- **Battery status for laptops** (percentage and charging state).
+
+### Fixed
+- **DNS parsing bug on Windows.** DNS servers now render on
+  separate rows instead of being concatenated together with a
+  literal `\n` string.
+
+### Changed
+- **Cleaner table footer** — single line instead of a
+  double-border.
+- **JSON output includes all the new fields** (architecture, GPUs,
+  shell, terminal, locale, battery).
+
+## [3.0.3] - 2026-02-03
+
+### Changed
+- **Rebranded** from "SHAUGHNESSY V DEVELOPMENT INC." to "QUBETX
+  DEVELOPER TOOLS".
+
+## [3.0.2] - 2026-02-03
+
+### Fixed
+- **Installer 404 errors fixed.** The package metadata was pointing
+  at the wrong repository, breaking the installer download.
+  Resolved.
+- **MSI help link** now points at the right repository.
+
+## [3.0.1] - 2026-02-03
+
+### Added
+- **Running install twice no longer fails.** `tr300 --install` is
+  now idempotent: running it a second time cleanly removes the
+  existing TR-300 config and reinstalls fresh, instead of returning
+  "already configured".
+
+## [3.0.0] - 2026-02-03
+
+> **Complete rewrite of TR-300 in Rust.** The previous shell-script
+> implementation is gone; this version is a single native binary
+> that ships for Windows, macOS, and Linux with installers for
+> each.
+
+### Added
+- **Native cross-platform binary** for Windows, macOS, and Linux.
+- **Unicode box-drawing table** rendering with multiple border
+  styles (single, double, rounded).
+- **Color-coded progress bars** for resource usage.
+- **CPU info** with per-core usage tracking.
+- **Memory and swap usage** with visual indicators.
+- **Disk and volume info** with usage bars.
+- **Network interface statistics.**
+- **Session and user information.**
+- **Platform-specific collectors** for extended information.
+- **Self-installation commands** (`tr300 install` /
+  `tr300 uninstall`).
+- **Configurable output width and compact mode**, plus command-line
+  flags for hiding specific sections.
+- **Automated cross-platform releases** with shell, PowerShell, and
+  Windows GUI installers.
+
+### Changed
+- **Binary is now `tr300`** (no hyphen) and the output is
+  redesigned with modern Unicode tables.
+
+### Removed
+- **Shell script implementation removed**, replaced by the native
+  Rust binary.
+- **Dependencies on external system commands** removed for core
+  functionality.
+
+### Fixed
+- **Consistent cross-platform behavior** across all three operating
+  systems.
+- **Accurate memory and disk calculations.**
+
+### Security
+- **No external command execution** for core functionality.
+- **Safe filesystem path handling.**
