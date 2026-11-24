@@ -4,7 +4,7 @@ This November 24, 2026 snapshot contains TR-300 4.5.1, ND-300 4.0.2 with SpeedQX
 
 1. Download the ZIP and its checksum on a connected computer. [Check the download and extracted files](README.md#verify-the-download).
 2. Extract the whole ZIP. Open `index.html` for the local file picker, or open `TR-300/`, `ND-300/`, or `SD-300/`.
-3. Choose the destination computer’s OS and processor. Choose an edition and format where offered. Open a terminal **in the folder that contains the installer or archive** and run the commands in its `README.md`.
+3. Choose the destination computer’s OS and processor. Choose an edition and format where offered. Open PowerShell on Windows or a terminal on macOS or Linux **in the folder that contains the installer or archive**. Paste the one-line command from its README and press Enter.
 
 ## Windows
 

@@ -35,41 +35,84 @@ def platform_path(name):
     raise ValueError(f'No offline layout for {name}')
 
 
-def install_commands(product, path):
+def windows_command(product, path, runtime, single_line):
+    name = path.name
+    steps = []
+    desktop = 'Desktop' in path.parts
+    if runtime and path.parts[:3] == runtime.parts[:3] and (desktop or path.suffix in ('.msi', '.exe')):
+        installer = posixpath.relpath(runtime, path.parent).replace('/', '\\')
+        setup = f'Start-Process -FilePath "{installer}" -Wait -ErrorAction Stop'
+        missing = '-not (Test-Path -LiteralPath $runtime)'
+        message = 'throw "The Microsoft x64 runtime is required for SD-300 Desktop."'
+        if single_line:
+            check = f'if ($setup.ExitCode -notin (0, 3010) -or {missing}) {{ {message} }}'
+            guard = f'if ({missing}) {{ $setup = {setup} -PassThru; {check} }}'
+        else:
+            guard = f'if ({missing}) {{\n    {setup}\n    if ({missing}) {{ {message} }}\n}}'
+        steps.extend([
+            '$system = if ([Environment]::Is64BitProcess) { "System32" } else { "Sysnative" }',
+            '$runtime = Join-Path $env:WINDIR "$system\\vcruntime140.dll"',
+            guard,
+        ])
+
+    if path.suffix == '.msi':
+        steps.append(f'msiexec.exe /i ".\\{name}"')
+    elif path.suffix == '.exe':
+        steps.append(f'Start-Process -FilePath ".\\{name}" -Wait')
+    else:
+        command = product['commands'][0]
+        version = product['tag'].removeprefix('v')
+        variant = 'desktop' if desktop else 'cli'
+        exe = 'sd300-gui' if desktop else command
+        steps.extend([
+            f'$dest = Join-Path $env:LOCALAPPDATA "QubeTX\\Portable\\{command}\\{version}\\{variant}"',
+            f'Expand-Archive -LiteralPath ".\\{name}" -DestinationPath $dest -ErrorAction Stop',
+            f'& "$dest\\{exe}.exe"' + ('' if desktop else ' --version'),
+        ])
+    if single_line and len(steps) > 1:
+        return '& { ' + '; '.join(steps) + ' }'
+    return '\n'.join(steps)
+
+
+def unix_command(product, path, single_line):
     name = path.name
     command = product['commands'][0]
-    version = product['tag'].removeprefix('v')
-    if path.suffix == '.msi':
-        return [f'msiexec.exe /i ".\\{name}"']
-    if path.suffix == '.exe':
-        return [f'Start-Process -FilePath ".\\{name}" -Wait']
     if path.suffix == '.pkg':
-        return [f'sudo /usr/sbin/installer -pkg "./{name}" -target /']
+        return f'sudo /usr/sbin/installer -pkg "./{name}" -target /'
     if path.suffix == '.dmg':
-        return ['mount_dir=$(mktemp -d)',
-                f'hdiutil attach -readonly -nobrowse -mountpoint "$mount_dir" "./{name}" &&',
-                f'  sudo /usr/sbin/installer -pkg "$mount_dir/{command}.pkg" -target /',
-                'hdiutil detach "$mount_dir" && rmdir "$mount_dir"']
+        attach = f'hdiutil attach -readonly -nobrowse -mountpoint "$mount_dir" "./{name}"'
+        install = f'sudo /usr/sbin/installer -pkg "$mount_dir/{command}.pkg" -target /'
+        cleanup = 'hdiutil detach "$mount_dir" && rmdir "$mount_dir"'
+        if single_line:
+            # Scope the traps to this paste. Keep the installer's exit status during cleanup.
+            chain = ['mount_dir=$(mktemp -d)', """trap 'rmdir "$mount_dir" || exit 1' 0""", attach,
+                     f"trap '{cleanup} || exit 1' 0", install]
+            return '(' + ' && '.join(chain) + ')'
+        return f'mount_dir=$(mktemp -d)\n{attach} &&\n  {install}\n{cleanup}'
 
     desktop = 'Desktop' in path.parts
+    version = product['tag'].removeprefix('v')
     variant = 'desktop' if desktop else 'cli'
-    if 'Windows' in path.parts:
-        exe = 'sd300-gui' if desktop else command
-        launch = f'& "$dest\\{exe}.exe"' + ('' if desktop else ' --version')
-        return [f'$dest = Join-Path $env:LOCALAPPDATA "QubeTX\\Portable\\{command}\\{version}\\{variant}"',
-                f'Expand-Archive -LiteralPath ".\\{name}" -DestinationPath $dest -ErrorAction Stop', launch]
-    destination = f'$HOME/.local/opt/qubetx/{command}/{version}/{variant}'
+    dest = f'dest="$HOME/.local/opt/qubetx/{command}/{version}/{variant}"'
     if desktop and 'macOS' in path.parts:
-        return [f'dest="{destination}"', 'mkdir -p "$dest" &&',
-                f'  ditto -x -k "./{name}" "$dest" &&', '  open "$dest/SD-300.app"']
-    executable = 'sd300/bin/sd300-gui' if desktop else f'{name.removesuffix(".tar.xz")}/{command}'
-    return [f'dest="{destination}"', 'mkdir -p "$dest" &&',
-            f'  tar -xf "./{name}" -C "$dest" &&',
-            f'  "$dest/{executable}"' + ('' if desktop else ' --version')]
+        extract = f'ditto -x -k "./{name}" "$dest"'
+        launch = 'open "$dest/SD-300.app"'
+    else:
+        executable = 'sd300/bin/sd300-gui' if desktop else f'{name.removesuffix(".tar.xz")}/{command}'
+        extract = f'tar -xf "./{name}" -C "$dest"'
+        launch = f'"$dest/{executable}"' + ('' if desktop else ' --version')
+    steps = ['mkdir -p "$dest"', extract, launch]
+    if single_line:
+        return '(' + ' && '.join([dest, *steps]) + ')'
+    return dest + '\n' + ' &&\n  '.join(steps)
 
 
 def command_guides(manifest):
-    """Write local commands for each product, target and installer format."""
+    """Write the guide format declared by the snapshot; older snapshots used multiple lines."""
+    guide_format = manifest.get('guide_format', 'multiline')
+    if guide_format not in ('multiline', 'single-line'):
+        raise ValueError(f'Unknown guide format: {guide_format}')
+    single_line = guide_format == 'single-line'
     sections = defaultdict(list)
     runtime = next((PurePosixPath(item['path']) for item in manifest.get('prerequisites', [])
                     if item['path'] == 'SD-300/Windows/x64/Runtime/vc_redist.x64.exe'), None)
@@ -80,21 +123,11 @@ def command_guides(manifest):
     for product in manifest['products']:
         for asset in product['assets']:
             path = PurePosixPath(asset['path'])
-            shell = 'powershell' if 'Windows' in path.parts else 'sh'
-            steps = install_commands(product, path)
-            if (runtime and path.parts[:3] == runtime.parts[:3]
-                    and ('Desktop' in path.parts or path.suffix in ('.msi', '.exe'))):
-                installer = posixpath.relpath(runtime, path.parent).replace('/', '\\')
-                steps = [
-                    '$system = if ([Environment]::Is64BitProcess) { "System32" } else { "Sysnative" }',
-                    '$runtime = Join-Path $env:WINDIR "$system\\vcruntime140.dll"',
-                    'if (-not (Test-Path -LiteralPath $runtime)) {',
-                    f'    Start-Process -FilePath "{installer}" -Wait -ErrorAction Stop',
-                    '    if (-not (Test-Path -LiteralPath $runtime)) { throw "The Microsoft x64 runtime is required for SD-300 Desktop." }',
-                    '}',
-                    *steps,
-                ]
-            commands = '\n'.join(steps)
-            fence = "```"
-            sections[path.parent].append(f"## {product['id']} {product['tag']}\n\n{fence}{shell}\n{commands}\n{fence}\n")
+            if 'Windows' in path.parts:
+                shell = 'powershell'
+                command = windows_command(product, path, runtime, single_line)
+            else:
+                shell = 'sh'
+                command = unix_command(product, path, single_line)
+            sections[path.parent].append(f"## {product['id']} {product['tag']}\n\n```{shell}\n{command}\n```\n")
     return {(folder / 'README.md').as_posix(): '\n'.join(blocks) for folder, blocks in sorted(sections.items())}

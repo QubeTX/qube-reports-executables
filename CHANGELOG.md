@@ -4,6 +4,10 @@ All notable changes to the `qube-reports-executables` distribution repository ar
 
 ---
 
+## [4.0.2] - 2026-11-24
+
+- Generate one PowerShell or shell command per offline install option, including SD-300 runtime setup and DMG cleanup. The verifier also recognizes the previous multiline guide format.
+
 ## [4.0.1] - 2026-11-24
 
 - Include Microsoft's signed x64 Visual C++ runtime installer for SD-300 Desktop and reference it from the Windows desktop installation commands.

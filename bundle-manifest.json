@@ -1,6 +1,7 @@
 {
   "schema_version": 2,
-  "bundle_version": "4.0.1",
+  "bundle_version": "4.0.2",
+  "guide_format": "single-line",
   "snapshot_date": "2026-11-24",
   "products": [
     {

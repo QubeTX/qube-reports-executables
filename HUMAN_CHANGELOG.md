@@ -1,5 +1,9 @@
 # Human Changelog
 
+## November 24, 2026 — One-paste installs
+
+- Open the folder for your installer, paste one line into your terminal, and press Enter. The same line handles any setup steps needed for that option.
+
 ## November 24, 2026 — Windows desktop installation
 
 - The ZIP includes the Microsoft runtime for SD-300 Desktop on Windows. Each Windows desktop guide opens the local installer when needed.

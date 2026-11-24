@@ -31,7 +31,7 @@ def landing(manifest):
                 continue
             label = ' / '.join(folder.parts[1:])
             options.append(f'<details><summary>{escape(label)}</summary>'
-                           f'<p><a href="{escape(folder.as_posix())}/README.md">Terminal install commands</a></p>'
+                           f'<p><a href="{escape(folder.as_posix())}/README.md">Terminal install command</a></p>'
                            f'<ul>{"".join(links)}</ul></details>')
         sections.append(f'<section><h2>{product["id"]} {product["tag"]}</h2>{"".join(options)}</section>')
     manuals = ''.join(f'<li><a href="{p["id"]}/Manuals/upstream/README.md">{p["id"]} {p["tag"]} manual</a>'
@@ -53,7 +53,7 @@ def landing(manifest):
 <section><h2>Choose your installer</h2>
 <p>Choose your tool, then the destination computer’s operating system and processor. On Windows, choose Standard (Global) for all users or Corporate for your account, then MSI or EXE. For upgrades, use the same edition and format as your existing installation.</p>
 <p>On Mac, the universal PKG supports both Intel and Apple Silicon. The TR-300 and ND-300 compatibility DMGs contain the same PKGs. On Linux, match the processor and C library. Portable CLI and Desktop downloads have separate folders.</p>
-<p>Extract the entire ZIP. Open a terminal in the folder containing your chosen file and run the commands under that tool’s name in its README. Each block installs or opens one tool. SD-300 native installers include its desktop app.</p>
+<p>Extract the entire ZIP. Open PowerShell on Windows or a terminal on macOS or Linux in the folder containing your chosen file. Paste the single line from its README and press Enter. SD-300 native installers include its desktop app.</p>
 {runtime}<p><a href="USER-INSTALL-GUIDE.md">Installation and upgrade guide</a> · <a href="SHA256SUMS.txt">Checksums</a></p></section>
 {''.join(sections)}
 <section><h2>Product manuals</h2><ul>{manuals}</ul>

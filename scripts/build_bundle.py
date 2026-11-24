@@ -118,6 +118,8 @@ def build(spec, output):
         raise ValueError('Output must be a new or empty directory; an existing bundle is never overwritten.')
     output.mkdir(parents=True, exist_ok=True)
     manifest = {key: spec[key] for key in ['schema_version', 'bundle_version', 'snapshot_date']}
+    if 'guide_format' in spec:
+        manifest['guide_format'] = spec['guide_format']
     manifest['products'] = []
     for product in spec['products']:
         safe_member(product['id'])

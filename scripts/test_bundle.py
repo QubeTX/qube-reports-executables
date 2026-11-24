@@ -64,6 +64,21 @@ class BundleVerificationTests(unittest.TestCase):
 
 
 class PlatformLayoutTests(unittest.TestCase):
+    def test_every_install_option_has_one_pasteable_line(self):
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / 'bundle-manifest.json').read_bytes())
+        spec = json.loads((root / 'bundle-spec.json').read_bytes())
+        self.assertEqual(manifest['guide_format'], 'single-line')
+        self.assertEqual(spec['guide_format'], manifest['guide_format'])
+        for path, guide in command_guides(manifest).items():
+            with self.subTest(path=path):
+                blocks = re.findall(r'^```(?:powershell|sh)\n(.*?)\n```$', guide, re.M | re.S)
+                self.assertTrue(blocks)
+                for command in blocks:
+                    self.assertEqual(len(command.splitlines()), 1)
+                    self.assertTrue(command.strip())
+                    self.assertNotIn('://', command)
+
     def test_sd300_windows_guides_reference_the_bundled_runtime(self):
         root = Path(__file__).resolve().parents[1]
         manifest = json.loads((root / 'bundle-manifest.json').read_bytes())
