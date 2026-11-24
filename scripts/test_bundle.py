@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from build_bundle import safe_member, verify
+from bundle_layout import command_guides, platform_path
 
 
 class BundleVerificationTests(unittest.TestCase):
@@ -58,6 +59,31 @@ class BundleVerificationTests(unittest.TestCase):
         self.save_manifest()
         with self.assertRaisesRegex(ValueError, 'Unsafe archive member'):
             verify(self.root)
+
+
+class PlatformLayoutTests(unittest.TestCase):
+    def test_product_first_windows_editions_have_local_install_commands(self):
+        root = Path(__file__).resolve().parents[1]
+        spec = json.loads((root / 'bundle-spec.json').read_bytes())
+        for product in spec['products']:
+            entries = [{'path': f"{product['id']}/{platform_path(name)}"} for name in product['assets']]
+            guides = command_guides({'products': [dict(product, assets=entries)]})
+            for edition in ('Standard', 'Corporate'):
+                for extension, command in [('MSI', 'msiexec.exe /i'), ('EXE', 'Start-Process')]:
+                    folder = f"{product['id']}/Windows/x64/{edition}/{extension}"
+                    names = [Path(e['path']).name for e in entries if e['path'].startswith(folder + '/')]
+                    with self.subTest(folder=folder):
+                        self.assertEqual(len(names), 1)
+                        self.assertIn(command, guides[folder + '/README.md'])
+                        self.assertIn(names[0], guides[folder + '/README.md'])
+
+    def test_linux_desktop_architecture_and_libc(self):
+        for target, expected in [('gnu-arm64', 'ARM64/glibc'), ('gnu-x86_64', 'x64/glibc'),
+                                 ('musl-x86_64', 'x64/musl')]:
+            name = f'sd300-gui-linux-{target}.tar.xz'
+            self.assertEqual(str(platform_path(name)), f'Linux/{expected}/Portable/Desktop/TAR.XZ/{name}')
+        with self.assertRaisesRegex(ValueError, 'No offline layout'):
+            platform_path('sd300-gui-linux-musl-arm64.tar.xz')
 
 
 if __name__ == '__main__':

@@ -1,5 +1,14 @@
 # Human Changelog
 
+## November 24, 2026
+
+**Improved**
+
+- The toolkit includes the latest machine and network tools alongside the current system monitor.
+- Use the same folding-tool logo on the website and in the downloaded toolkit.
+- Choose a tool, then your operating system and processor. Each installer folder includes its own terminal commands.
+- All three Windows tools have per-user Corporate and machine-wide Standard installers in both formats.
+
 ## October 11, 2026
 
 **Improved**

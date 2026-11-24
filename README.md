@@ -1,72 +1,55 @@
 # QubeTX Offline Toolkit
 
-**Bundle 3.0.0 · October 11, 2026**
+**Bundle 4.0.0 · November 24, 2026**
 
-Download [qubetx-offline-bundle.zip](https://github.com/QubeTX/qube-reports-executables/releases/latest/download/qubetx-offline-bundle.zip), extract it, and open **index.html**. This local start page uses no external services, fonts, or JavaScript. The ZIP includes official installers, portable archives, matching documentation, licenses, and checksums.
+[Download the offline ZIP](https://github.com/QubeTX/qube-reports-executables/releases/latest/download/qubetx-offline-bundle.zip) and its [SHA-256 checksum](https://github.com/QubeTX/qube-reports-executables/releases/latest/download/qubetx-offline-bundle.zip.sha256). Copy the ZIP to the destination computer, extract it, and open **index.html** or open the folder for **TR-300**, **ND-300**, or **SD-300**. The start page works entirely offline.
 
-| Product | Included release | Commands and purpose |
-|---|---|---|
-| TR-300 | **4.4.0** | `tr300`, `report`: system reports and explicit JSON/Markdown export |
-| ND-300 | **4.0.1** | `nd300`, `speedqx`: network diagnostics and Methodology v5 throughput tests |
-| SD-300 | **4.1.0** | `sd300`: terminal diagnostics, snapshots, and the native desktop monitor |
+| Included tool | Release | Commands |
+| --- | --- | --- |
+| TR-300 machine report | [4.5.1](https://github.com/QubeTX/qube-machine-report/releases/tag/v4.5.1) | `tr300`, `report` |
+| ND-300 network diagnostics | [4.0.2](https://github.com/QubeTX/qube-network-diagnostics/releases/tag/v4.0.2) | `nd300`, `speedqx` |
+| SD-300 system diagnostics | [4.1.0](https://github.com/QubeTX/qube-system-diagnostics/releases/tag/v4.1.0) | `sd300`, plus the desktop app |
 
-This is a dated snapshot, not a live mirror. WB-300 and Shaughv OS are not included. These binaries come from the exact published tags recorded in `bundle-manifest.json`; no local development build is substituted.
+## Find the right file
 
-## What's inside
+Inside your chosen product, use the folders below. Portable desktop packages belong to SD-300.
 
-Each product has `windows/`, `macos/`, `linux/`, `docs/`, and a product-level `sha256.sum`.
+| Folder | What to choose |
+| --- | --- |
+| `Windows/x64/` | **Standard** (the upstream Global edition, all users) or **Corporate** (current user), then **MSI** or **EXE**. **Portable** has separate CLI and desktop ZIPs. |
+| `macOS/Universal/` | **Standard/PKG** installs on Intel and Apple Silicon. **Standard/DMG** has the TR-300 and ND-300 compatibility images containing the same PKGs. **Portable/Desktop/ZIP** contains the SD-300 app. |
+| `macOS/Apple-Silicon/` or `macOS/Intel-x64/` | Portable command-line archives for that processor. |
+| `Linux/x64/` or `Linux/ARM64/` | Choose **glibc** or **musl** as published for your processor, then **Portable/CLI** or **Portable/Desktop**. ARM64 has glibc builds. |
+| `Manuals/` | Matching product manuals, licenses, release notes and available man pages. |
 
-- **Windows x64:** Global and Corporate MSI/EXE installers plus a portable command-line ZIP. Global installs machine-wide and requires administrator approval; Corporate installs per user. SD-300 also includes a separate portable GUI ZIP.
-- **macOS:** a universal PKG for Intel and Apple Silicon, plus architecture-specific command-line archives. SD-300 also includes the universal GUI app ZIP. Legacy compatibility DMGs are intentionally omitted.
-- **Linux:** command-line archives for x64 GNU, ARM64 GNU, and x64 musl. SD-300 includes matching GUI archives with their private runtime. Use a compatible distribution and graphical desktop for the GUI; system libc, kernel, display, and driver support still come from the host.
-- **Documentation:** each product's published README, changelog, license, release notes, Markdown documents, and available man pages are stored locally. Supporting images and external links are not mirrored. The current bundle install guide is the authority for offline setup; upstream READMEs also describe online installation.
-- **Integrity:** original upstream `.sha256` sidecars accompany all 38 payloads. The manifest records immutable source URLs, release commits, sizes, and SHA-256 hashes. `SHA256SUMS.txt` covers the complete curated bundle except itself.
+**Every folder containing installers or archives has a command-only `README.md`.** Open a terminal in that folder and run its command block. For example, see the [TR-300 Corporate MSI commands](TR-300/Windows/x64/Corporate/MSI/README.md). For upgrades and platform requirements, see the [installation guide](USER-INSTALL-GUIDE.md).
 
-Product folders are `TR300-qube-machine-report`, `ND300-qube-network-diagnostics`, and `SD300-qube-system-diagnostics`.
+The 40 distinct packages are the original, unmodified upstream downloads. SD-300’s legacy MSI filename is a byte-identical alias of its Standard MSI. The manifest records that alias. Corporate editions are published for Windows x64. SD-300 native installers include both the CLI and desktop app.
 
-## Offline scope
+## Verify the download
 
-No package manager or Rust toolchain is needed to install the included prebuilt files. Initial download requires a connected computer; copy the extracted folder or ZIP to the destination computer.
+Compare the SHA-256 of the ZIP with its published checksum before extraction. Then run the command for your OS from the extracted bundle root to verify individual files.
 
-Offline installation does **not** make network services work without connectivity. ND-300 can inspect available local state, but public DNS, public-IP lookups, remote routes, throughput tests, and network recovery verification require the relevant network. SpeedQX needs internet for its remote tests. Self-update and downloading replacement assets also need internet. TR-300 and SD-300 local readings remain subject to available hardware and OS permissions.
-
-SD-300 native MSI/EXE/PKG installers contain both the CLI and desktop app. Separate portable GUI archives can be opened directly while preserving their full folder structure; they do not establish managed ownership. Terminal-only use remains available through the CLI archive.
-
-Read [USER-INSTALL-GUIDE.md](USER-INSTALL-GUIDE.md) before upgrading an existing managed installation, particularly SD-300 3.x to 4.x.
-
-## Verify integrity
-
-The release ZIP has a sibling `qubetx-offline-bundle.zip.sha256` file. Verify that before extraction when possible. After extraction, run from the bundle folder:
-
-```sh
-# Linux
-sha256sum -c SHA256SUMS.txt
-# macOS
-shasum -a 256 -c SHA256SUMS.txt
-```
+**Windows PowerShell**
 
 ```powershell
-# Windows; uses only the local checksum list and local files
 .\scripts\Verify-Bundle.ps1
 ```
 
-If your policy prevents running scripts, compare an individual file manually:
+**macOS**
 
-```powershell
-(Get-FileHash .\TR300-qube-machine-report\windows\tr300-x86_64-pc-windows-msvc.msi -Algorithm SHA256).Hash
-Get-Content .\TR300-qube-machine-report\windows\tr300-x86_64-pc-windows-msvc.msi.sha256
+```sh
+shasum -a 256 -c SHA256SUMS.txt
 ```
 
-Checksums detect changed bytes; they are not a substitute for trusting the source or checking the publisher. Do not bypass OS or organizational restrictions to install these tools.
+**Linux**
 
-## Rebuilding and future refreshes
+```sh
+sha256sum -c SHA256SUMS.txt
+```
 
-See [qube-tx-build-runbook.md](qube-tx-build-runbook.md). `bundle-spec.json` is an explicit product/asset allowlist. `scripts/build_bundle.py` verifies upstream checksums and GitHub digests, validates archives, and copies documentation from the pinned release commit. `scripts/package_bundle.py` generates the local start page and a deterministic ZIP from a curated file list, excluding Git data and historical build notes.
+The ZIP checksum can also be verified on macOS with `shasum -a 256 -c qubetx-offline-bundle.zip.sha256`, or on Linux with `sha256sum -c qubetx-offline-bundle.zip.sha256`, in the folder holding both downloads. Each package has its original upstream checksum alongside it. The [manifest](bundle-manifest.json) lists exact source commits, tagged URLs, file sizes and digests.
 
-## Sources and licenses
+Installation uses local files and needs no Rust toolchain or package manager. Internet speed tests, public DNS and IP checks, and self-updates require connectivity. Local diagnostics depend on available hardware and OS permissions.
 
-- [TR-300 v4.4.0](https://github.com/QubeTX/qube-machine-report/releases/tag/v4.4.0)
-- [ND-300 v4.0.1](https://github.com/QubeTX/qube-network-diagnostics/releases/tag/v4.0.1)
-- [SD-300 v4.1.0](https://github.com/QubeTX/qube-system-diagnostics/releases/tag/v4.1.0)
-
-Each product retains its upstream license; bundled GUI dependencies retain the notices inside their official archive. Binaries are redistributed unchanged, without re-signing or repackaging their inner installers.
+Maintainers can reproduce the snapshot with the [release runbook](qube-tx-build-runbook.md).

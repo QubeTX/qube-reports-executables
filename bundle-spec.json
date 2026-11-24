@@ -1,14 +1,13 @@
 {
-  "schema_version": 1,
-  "bundle_version": "3.0.0",
-  "snapshot_date": "2026-10-11",
+  "schema_version": 2,
+  "bundle_version": "4.0.0",
+  "snapshot_date": "2026-11-24",
   "products": [
     {
       "id": "TR-300",
       "repo": "QubeTX/qube-machine-report",
-      "folder": "TR300-qube-machine-report",
-      "tag": "v4.4.0",
-      "commit": "f49d50a256842ac6c677d1c743c553b3dd92717f",
+      "tag": "v4.5.1",
+      "commit": "55650b8ef9dfd4ef1dd2d53d33da7000a5f0c441",
       "commands": [
         "tr300",
         "report"
@@ -17,6 +16,7 @@
       "assets": [
         "tr300-aarch64-apple-darwin.tar.xz",
         "tr300-aarch64-unknown-linux-gnu.tar.xz",
+        "tr300-universal-apple-darwin.dmg",
         "tr300-universal-apple-darwin.pkg",
         "tr300-x86_64-apple-darwin.tar.xz",
         "tr300-x86_64-pc-windows-msvc-corporate-setup.exe",
@@ -31,9 +31,8 @@
     {
       "id": "ND-300",
       "repo": "QubeTX/qube-network-diagnostics",
-      "folder": "ND300-qube-network-diagnostics",
-      "tag": "v4.0.1",
-      "commit": "d76af2b2e282440e2e28c31c8b05d5d8833f458f",
+      "tag": "v4.0.2",
+      "commit": "ceb10bf6e5818a36200c8292c78c3202160de864",
       "commands": [
         "nd300",
         "speedqx"
@@ -42,6 +41,7 @@
       "assets": [
         "nd300-aarch64-apple-darwin.tar.xz",
         "nd300-aarch64-unknown-linux-gnu.tar.xz",
+        "nd300-universal-apple-darwin.dmg",
         "nd300-universal-apple-darwin.pkg",
         "nd300-x86_64-apple-darwin.tar.xz",
         "nd300-x86_64-pc-windows-msvc-corporate-setup.exe",
@@ -56,7 +56,6 @@
     {
       "id": "SD-300",
       "repo": "QubeTX/qube-system-diagnostics",
-      "folder": "SD300-qube-system-diagnostics",
       "tag": "v4.1.0",
       "commit": "1d66a461b3e499e067b6c15658b04a8cde89671d",
       "commands": [
@@ -80,7 +79,10 @@
         "tr300-tui-x86_64-pc-windows-msvc.zip",
         "tr300-tui-x86_64-unknown-linux-gnu.tar.xz",
         "tr300-tui-x86_64-unknown-linux-musl.tar.xz"
-      ]
+      ],
+      "identical_aliases": {
+        "tr300-tui-x86_64-pc-windows-msvc.msi": "sd300-windows-x64-global.msi"
+      }
     }
   ]
 }

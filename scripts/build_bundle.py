@@ -13,6 +13,8 @@ import time
 import urllib.request
 import zipfile
 
+from bundle_layout import command_guides, platform_path
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -75,17 +77,7 @@ def verified_asset(asset, sidecar):
     return data, checksum
 
 
-def platform(name):
-    if 'windows' in name:
-        return 'windows'
-    if 'linux' in name:
-        return 'linux'
-    if 'apple-darwin' in name or 'macos' in name:
-        return 'macos'
-    raise ValueError(f'Unclassified platform: {name}')
-
-
-def save_docs(product, folder):
+def save_docs(product, output, folder):
     """Mirror release-tag Markdown/manuals, so core documentation works offline."""
     url = f"https://codeload.github.com/{product['repo']}/tar.gz/{product['commit']}"
     docs = []
@@ -109,24 +101,26 @@ def save_docs(product, folder):
                 continue
             safe_member(str(relative))
             data = archive.extractfile(member).read()
-            destination = folder / 'docs' / 'upstream' / str(relative)
+            destination = folder / 'upstream' / str(relative)
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
-            docs.append(dict(path=destination.relative_to(folder).as_posix(), sha256=sha256(data), bytes=len(data)))
+            docs.append(dict(path=destination.relative_to(output).as_posix(), sha256=sha256(data), bytes=len(data)))
     for required in ['README.md', 'CHANGELOG.md', product['license']]:
-        if not (folder / 'docs/upstream' / required).is_file():
+        if not (folder / 'upstream' / required).is_file():
             raise ValueError(f"Missing {product['id']} documentation: {required}")
     return sorted(docs, key=lambda item: item['path'])
 
 
 def build(spec, output):
+    if spec['schema_version'] != 2:
+        raise ValueError('Rebuild historical schemas with the build script from their release tag.')
     if output.exists() and any(output.iterdir()):
         raise ValueError('Output must be a new or empty directory; an existing bundle is never overwritten.')
     output.mkdir(parents=True, exist_ok=True)
     manifest = {key: spec[key] for key in ['schema_version', 'bundle_version', 'snapshot_date']}
     manifest['products'] = []
     for product in spec['products']:
-        safe_member(product['folder'])
+        safe_member(product['id'])
         repo, tag = product['repo'], product['tag']
         release = api(f'repos/{repo}/releases/tags/{tag}')
         commit = api(f'repos/{repo}/commits/{tag}')['sha']
@@ -137,16 +131,33 @@ def build(spec, output):
             safe_member(name)
             if name not in assets or name + '.sha256' not in assets:
                 raise ValueError(f'Missing release asset/checksum: {repo} {name}')
-        folder = output / product['folder']
-        folder.mkdir()
-        inventory = {key: product[key] for key in ['id', 'repo', 'folder', 'tag', 'commit', 'commands']}
+        # Keep the complete installable release matrix visible when upstream adds formats.
+        payloads = {name for name in assets if name != 'source.tar.gz' and not name.endswith(
+            ('.sha256', '.json', '.sum', '.txt', '.wixpdb', '.sh', '.ps1'))}
+        aliases = product.get('identical_aliases', {})
+        expected_assets = set(product['assets']) | aliases.keys()
+        if payloads != expected_assets:
+            raise ValueError(f'Offline inventory differs from {repo} {tag}: '
+                             f'{payloads.symmetric_difference(expected_assets)}')
+        for alias, canonical in aliases.items():
+            digest = assets[canonical].get('digest')
+            if canonical not in product['assets'] or not digest or assets[alias].get('digest') != digest:
+                raise ValueError(f'Compatibility filename differs from its canonical package: {alias}')
+        corporate = [name for name in product['assets'] if '-corporate' in name]
+        if sorted(Path(name).suffix for name in corporate) != ['.exe', '.msi']:
+            raise ValueError(f'Missing Corporate MSI or EXE: {repo}')
+        folder = output / product['id'] / 'Manuals'
+        folder.mkdir(parents=True)
+        inventory = {key: product[key] for key in ['id', 'repo', 'tag', 'commit', 'commands']}
+        if aliases:
+            inventory['identical_aliases'] = aliases
         inventory.update(release_url=release['html_url'], published_at=release['published_at'], assets=[])
 
         def fetch(name):
             data, checksum = verified_asset(assets[name], assets[name + '.sha256'])
-            relative = platform(name) + '/' + name
-            target = folder / relative
-            target.parent.mkdir(exist_ok=True)
+            relative = (PurePosixPath(product['id']) / platform_path(name)).as_posix()
+            target = output / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
             target.with_name(name + '.sha256').write_bytes(checksum)
             return dict(path=relative, bytes=len(data), sha256=sha256(data),
@@ -155,18 +166,20 @@ def build(spec, output):
 
         with ThreadPoolExecutor(max_workers=4) as pool:
             inventory['assets'] = sorted(pool.map(fetch, product['assets']), key=lambda item: item['path'])
-        inventory['documentation'] = save_docs(product, folder)
-        (folder / 'docs/RELEASE-NOTES.md').write_text(release.get('body') or 'No release notes supplied.', encoding='utf-8', newline='\n')
-        files = sorted(p for p in folder.rglob('*') if p.is_file())
-        (folder / 'sha256.sum').write_text(''.join(f'{sha256(p.read_bytes())}  {p.relative_to(folder).as_posix()}\n' for p in files), encoding='utf-8', newline='\n')
+        inventory['documentation'] = save_docs(product, output, folder)
+        notes = folder / 'RELEASE-NOTES.md'
+        notes.write_text(release.get('body') or 'No release notes supplied.', encoding='utf-8', newline='\n')
+        data = notes.read_bytes()
+        inventory['documentation'].append(dict(path=notes.relative_to(output).as_posix(), sha256=sha256(data), bytes=len(data)))
         manifest['products'].append(inventory)
         print(f"Verified {product['id']} {tag}: {len(inventory['assets'])} payloads, {len(inventory['documentation'])} documents", flush=True)
+    for relative, contents in command_guides(manifest).items():
+        (output / relative).write_text(contents, encoding='utf-8', newline='\n')
     (output / 'bundle-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
     return manifest
 
 
-def verify(directory):
-    manifest = json.loads((directory / 'bundle-manifest.json').read_text(encoding='utf-8'))
+def verify_legacy(directory, manifest):
     checked = 0
     for product in manifest['products']:
         safe_member(product['folder'])
@@ -195,6 +208,47 @@ def verify(directory):
             if sha256(data) != document['sha256'] or len(data) != document['bytes']:
                 raise ValueError(f"Documentation manifest mismatch: {document['path']}")
     print(f'Verified {checked} files against product checksums and manifest.', flush=True)
+
+
+def verify(directory):
+    manifest = json.loads((directory / 'bundle-manifest.json').read_bytes())
+    if manifest.get('schema_version', 1) == 1:
+        return verify_legacy(directory, manifest)
+    if manifest['schema_version'] != 2:
+        raise ValueError('Unsupported manifest schema')
+    expected = set()
+
+    def checked(relative, digest, size=None):
+        safe_member(relative)
+        data = (directory / relative).read_bytes()
+        if relative in expected or sha256(data) != digest or (size is not None and len(data) != size):
+            raise ValueError(f'Duplicate or mismatched manifest entry: {relative}')
+        expected.add(relative)
+        return data
+
+    for product in manifest['products']:
+        if not re.fullmatch(r'[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*', product['id']):
+            raise ValueError('Invalid product directory')
+        for asset in product['assets']:
+            path = asset['path']
+            expected_path = PurePosixPath(product['id']) / platform_path(PurePosixPath(path).name)
+            if expected_path.as_posix() != path:
+                raise ValueError(f'Incorrect platform folder: {path}')
+            data = checked(path, asset['sha256'], asset['bytes'])
+            sidecar = checked(path + '.sha256', asset['sidecar_sha256'])
+            if sidecar.decode('utf-8-sig').split()[0].lower() != asset['sha256']:
+                raise ValueError(f'Upstream sidecar mismatch: {path}')
+            inspect_archive(path, data)
+        for document in product['documentation']:
+            checked(document['path'], document['sha256'], document['bytes'])
+    for relative, content in command_guides(manifest).items():
+        checked(relative, sha256(content.encode('utf-8')))
+    actual = {p.relative_to(directory).as_posix()
+              for product in manifest['products']
+              for p in (directory / product['id']).rglob('*') if p.is_file()}
+    if actual != expected:
+        raise ValueError(f'Unexpected or missing files: {actual.symmetric_difference(expected)}')
+    print(f'Verified {len(expected)} files against release hashes and platform guides.', flush=True)
 
 
 def main():

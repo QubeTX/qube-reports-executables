@@ -4,6 +4,14 @@ All notable changes to the `qube-reports-executables` distribution repository ar
 
 ---
 
+## [4.0.0] - 2026-11-24
+
+- Refresh TR-300 to 4.5.1 and ND-300 to 4.0.2. SD-300 4.1.0 is the current stable release.
+- Give the local HTML start page the same standalone SVG emblem as the online toolkit.
+- Organize 40 distinct release packages by product, OS, architecture, edition or portable variant, and format. Provide local command guides beside every installer and archive.
+- Include Standard and Corporate Windows x64 MSI and EXE for every product, plus both published macOS compatibility DMGs. Verify the SD-300 legacy MSI alias against the canonical Global package digest.
+- Record archive-root-relative paths in manifest schema 2, verify original sidecars, and check the release inventory for newly published formats.
+
 ## [3.0.0] - 2026-10-11
 
 ### Changed
