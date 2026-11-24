@@ -13,6 +13,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {os: macos-26, format: PKG}
+          - {os: ubuntu-24.04, format: portable}
+          - {os: ubuntu-24.04-arm, format: portable}
           - {os: windows-2022, edition: Standard, format: MSI}
           - {os: windows-2022, edition: Corporate, format: MSI}
           - {os: windows-2022, edition: Standard, format: EXE}
@@ -29,10 +32,10 @@ jobs:
         shell: bash
         run: |
           python scripts/stage-offline-audit.py
-      - name: Install local Windows packages with outbound traffic blocked
+      - name: Run the local packages on a full Windows VM
         if: runner.os == 'Windows'
         shell: pwsh
-        run: ./scripts/test-offline-windows.ps1
+        run: ./scripts/test-offline-windows.ps1 -FullVM
       - name: Install local macOS packages under a network-restricted client
         if: runner.os == 'macOS'
         run: bash scripts/test-offline-macos.sh

@@ -16,7 +16,9 @@ done
 cd "$1/SD-300/Linux/$2/$3/Portable/Desktop/TAR.XZ"
 mkdir -p "$HOME/desktop"
 tar -xf ./*.tar.xz -C "$HOME/desktop"
-test -x "$HOME/desktop/sd300/bin/sd300-gui"
+"$HOME/desktop/sd300/bin/sd300-gui" --self-test --json > /tmp/desktop-check.json
+grep -Eq '"'"'"success"[[:space:]]*:[[:space:]]*true'"'"' /tmp/desktop-check.json
+cat /tmp/desktop-check.json
 '
 sudo unshare --net -- env HOME="$RUNNER_TEMP/gnu-home" sh -c "$smoke" audit "$root" "$arch" glibc
 if [[ "$arch" == x64 ]]; then

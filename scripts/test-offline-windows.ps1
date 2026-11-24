@@ -1,6 +1,6 @@
-param([switch]$InsideGuest)
+param([switch]$InsideGuest, [switch]$FullVM)
 $ErrorActionPreference = 'Stop'
-if (!$InsideGuest) {
+if (!$InsideGuest -and !$FullVM) {
     $root = Join-Path $env:RUNNER_TEMP 'qubetx-offline-bundle'
     $scripts = $PSScriptRoot
     $image = 'mcr.microsoft.com/windows/server:ltsc2022'
@@ -9,8 +9,8 @@ if (!$InsideGuest) {
     docker run --rm --network none --mount "type=bind,source=$root,target=C:\kit,readonly" --mount "type=bind,source=$scripts,target=C:\audit,readonly" --env "EDITION=$env:EDITION" --env "FORMAT=$env:FORMAT" $image powershell -NoProfile -ExecutionPolicy Bypass -File C:\audit\test-offline-windows.ps1 -InsideGuest
     exit $LASTEXITCODE
 }
-$root = 'C:\kit'
-if ([Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | Where-Object { $_.OperationalStatus -eq 'Up' -and $_.NetworkInterfaceType -ne 'Loopback' -and $_.GetIPProperties().GatewayAddresses.Count -gt 0 }) { throw 'Unexpected network gateway' }
+$root = if ($FullVM) { Join-Path $env:RUNNER_TEMP 'qubetx-offline-bundle' } else { 'C:\kit' }
+if (!$FullVM -and ([Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | Where-Object { $_.OperationalStatus -eq 'Up' -and $_.NetworkInterfaceType -ne 'Loopback' -and $_.GetIPProperties().GatewayAddresses.Count -gt 0 })) { throw 'Unexpected network gateway' }
 $products = (Get-Content (Join-Path $root 'bundle-manifest.json') -Raw | ConvertFrom-Json).products
 $failures = @()
 foreach ($p in $products) {
@@ -41,9 +41,15 @@ foreach ($p in $products) {
         $exe = Join-Path $tool "bin/$cmd.exe"
         $version = & $exe --version | Out-String
         if ($LASTEXITCODE -ne 0 -or !$version.Contains($p.tag.Substring(1))) { throw "$cmd version failed" }
-        Write-Output "OFFLINE INSTALLED $env:EDITION $env:FORMAT $exe $version"
+        Write-Output "INSTALLED FROM LOCAL MEDIA $env:EDITION $env:FORMAT $exe $version"
     }
-    if ($p.id -eq 'SD-300' -and !(Test-Path (Join-Path $tool 'app/sd300-gui.exe'))) { throw 'Missing installed desktop app' }
+    if ($p.id -eq 'SD-300') {
+        $stdout = Join-Path $env:TEMP 'desktop-self-test.json'
+        $process = Start-Process -FilePath (Join-Path $tool 'app/sd300-gui.exe') -ArgumentList '--self-test','--json' -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError "$stdout.err"
+        $result = Get-Content $stdout -Raw | ConvertFrom-Json
+        if ($process.ExitCode -ne 0 -or !$result.success -or $result.product_version -ne '4.1.0') { throw 'SD-300 desktop self-test failed' }
+        Write-Output "LOCAL DESKTOP SELF-TEST PASSED $($result.product_version)"
+    }
   } catch {
     $failures += "$($p.id): $_"
     Write-Output $failures[-1]

@@ -27,4 +27,4 @@ for product in TR-300 ND-300 SD-300; do
         echo "INSTALLED FROM LOCAL PKG $(uname -m) /usr/local/bin/$bin $actual"
     done
 done
-test -x /Applications/SD-300.app/Contents/MacOS/sd300-gui
+restricted /Applications/SD-300.app/Contents/MacOS/sd300-gui --self-test --json | jq -e '.success and .product_version == "4.1.0"'
