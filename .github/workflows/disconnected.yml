@@ -1,0 +1,45 @@
+name: Verify disconnected installation
+on:
+  push:
+    branches: [codex/verify-disconnected-toolkit-4.0.0]
+permissions:
+  contents: read
+jobs:
+  install:
+    name: ${{ matrix.os }} ${{ matrix.edition }} ${{ matrix.format }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: windows-2022, edition: Standard, format: MSI}
+          - {os: windows-2022, edition: Corporate, format: MSI}
+          - {os: windows-2022, edition: Standard, format: EXE}
+          - {os: windows-2022, edition: Corporate, format: EXE}
+          - {os: macos-15, format: PKG}
+          - {os: macos-15-intel, format: PKG}
+          - {os: ubuntu-24.04, format: portable}
+          - {os: ubuntu-24.04-arm, format: portable}
+    env:
+      EDITION: ${{ matrix.edition }}
+      FORMAT: ${{ matrix.format }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts
+      - name: Stage the exact public ZIP before disconnecting
+        shell: bash
+        run: |
+          python scripts/stage-offline-audit.py
+      - name: Install local Windows packages with outbound traffic blocked
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test-offline-windows.ps1
+      - name: Install local macOS packages under a network-restricted client
+        if: runner.os == 'macOS'
+        run: bash scripts/test-offline-macos.sh
+      - name: Extract and run Linux packages with no network interface
+        if: runner.os == 'Linux'
+        run: bash scripts/test-offline-linux.sh
