@@ -1,0 +1,60 @@
+name: Test the pasted toolkit commands
+on:
+  push:
+    branches: [codex/qualify-one-paste-4.0.2]
+permissions:
+  contents: read
+jobs:
+  guides:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-26, ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Run commands from the install READMEs
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,os,platform,plistlib,re,subprocess,tempfile
+          from pathlib import Path
+          root=Path.cwd()
+          mac=platform.system()=='Darwin'
+          shell='zsh' if mac else 'sh'
+          system='macOS' if mac else 'Linux'
+          machine=platform.machine()
+          arch=('Apple-Silicon' if machine=='arm64' else 'Intel-x64') if mac else ('ARM64' if machine=='aarch64' else 'x64')
+          sandbox=Path(tempfile.mkdtemp(prefix='Offline USB target '))
+          env=dict(os.environ,HOME=str(sandbox))
+          prefix=[] if mac else ['sudo','unshare','--net','--','env','HOME='+str(sandbox)]
+          def run(cmd,folder,**options):
+              return subprocess.run(prefix+[shell,'-c',cmd],cwd=folder,env=env,**options)
+          def assert_detached(image):
+              info=plistlib.loads(subprocess.check_output(['hdiutil','info','-plist']))
+              assert all(Path(item.get('image-path','')).name!=image.name for item in info['images']),image
+          for prod in json.loads((root/'bundle-manifest.json').read_bytes())['products']:
+              for asset in prod['assets']:
+                  path=Path(asset['path'])
+                  if system not in path.parts: continue
+                  guide=(path.parent/'README.md').read_text()
+                  line=re.search(r'^```sh\n([^\n]+)\n```$',guide,re.M).group(1)
+                  subprocess.run([shell,'-n','-c',line],check=True)
+                  if (arch in path.parts and 'CLI' in path.parts and 'musl' not in path.parts):
+                      output=run(line,path.parent,check=True,text=True,stdout=subprocess.PIPE).stdout.strip()
+                      assert prod['tag'][1:] in output,output
+                      print('READ FROM README AND RAN:',path,output,flush=True)
+                  elif mac and ('DMG' in path.parts or ('PKG' in path.parts and prod['id']=='SD-300')):
+                      if path.suffix=='.dmg':
+                          failed=run('sudo() { return 37; }; '+line,path.parent)
+                          assert failed.returncode==37,failed.returncode
+                          assert_detached(path)
+                      run(line,path.parent,check=True)
+                      exe='/usr/local/bin/'+prod['commands'][0]
+                      assert prod['tag'][1:] in subprocess.check_output([exe,'--version'],text=True)
+                      if path.suffix=='.dmg': assert_detached(path)
+                      print('INSTALLED FROM README:',path,flush=True)
+          PY
