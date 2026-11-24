@@ -1,5 +1,10 @@
 # Human Changelog
 
+## November 24, 2026 — Windows desktop installation
+
+- The ZIP includes the Microsoft runtime for SD-300 Desktop on Windows. Each Windows desktop guide opens the local installer when needed.
+- The offline start page uses a new three-tool pocketknife logo.
+
 ## November 24, 2026
 
 **Improved**

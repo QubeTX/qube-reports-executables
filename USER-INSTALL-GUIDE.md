@@ -10,6 +10,8 @@ This November 24, 2026 snapshot contains TR-300 4.5.1, ND-300 4.0.2 with SpeedQX
 
 All three tools target Windows x64. Under your tool’s `Windows/x64/` folder, choose **Standard** (called Global by the publisher) to install for all users with administrator approval, or **Corporate** for a current-user installation. Both editions offer MSI and EXE. Pick one format. For upgrades, match the edition and format already installed.
 
+SD-300 Desktop requires the Microsoft Visual C++ x64 runtime. If the DLL is missing, the Windows command guides open the local runtime installer from the extracted toolkit. Installing this system prerequisite can require administrator approval, including for a Corporate or portable desktop deployment. IT can provision it in advance using the [local runtime commands](SD-300/Windows/x64/Runtime/README.md). The CLI runs independently. On Windows N, provision the matching Windows Media Feature Pack from your organization's Windows offline servicing media before using the desktop app.
+
 | Corporate MSI commands | Corporate EXE commands |
 | --- | --- |
 | [TR-300 MSI](TR-300/Windows/x64/Corporate/MSI/README.md) | [TR-300 EXE](TR-300/Windows/x64/Corporate/EXE/README.md) |

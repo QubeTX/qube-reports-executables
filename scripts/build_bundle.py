@@ -173,6 +173,17 @@ def build(spec, output):
         inventory['documentation'].append(dict(path=notes.relative_to(output).as_posix(), sha256=sha256(data), bytes=len(data)))
         manifest['products'].append(inventory)
         print(f"Verified {product['id']} {tag}: {len(inventory['assets'])} payloads, {len(inventory['documentation'])} documents", flush=True)
+    if spec.get('prerequisites'):
+        manifest['prerequisites'] = spec['prerequisites']
+        for prerequisite in manifest['prerequisites']:
+            relative = prerequisite['path']
+            safe_member(relative)
+            contents = download(prerequisite['source_url'])
+            if len(contents) != prerequisite['bytes'] or sha256(contents) != prerequisite['sha256']:
+                raise ValueError(f'Prerequisite checksum mismatch: {relative}')
+            destination = output / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(contents)
     for relative, contents in command_guides(manifest).items():
         (output / relative).write_text(contents, encoding='utf-8', newline='\n')
     (output / 'bundle-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
@@ -241,6 +252,8 @@ def verify(directory):
             inspect_archive(path, data)
         for document in product['documentation']:
             checked(document['path'], document['sha256'], document['bytes'])
+    for prerequisite in manifest.get('prerequisites', []):
+        checked(prerequisite['path'], prerequisite['sha256'], prerequisite['bytes'])
     for relative, content in command_guides(manifest).items():
         checked(relative, sha256(content.encode('utf-8')))
     actual = {p.relative_to(directory).as_posix()

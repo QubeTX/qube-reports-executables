@@ -2,6 +2,8 @@
 import hashlib
 import json
 from pathlib import Path
+import posixpath
+import re
 import tempfile
 import unittest
 
@@ -62,6 +64,25 @@ class BundleVerificationTests(unittest.TestCase):
 
 
 class PlatformLayoutTests(unittest.TestCase):
+    def test_sd300_windows_guides_reference_the_bundled_runtime(self):
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / 'bundle-manifest.json').read_bytes())
+        runtime, = manifest['prerequisites']
+        self.assertEqual(hashlib.sha256((root / runtime['path']).read_bytes()).hexdigest(), runtime['sha256'])
+        matched = []
+        for name, guide in command_guides(manifest).items():
+            if 'vc_redist.x64.exe' not in guide or '/Runtime/' in name:
+                continue
+            reference = re.search(r'Start-Process -FilePath "([^"]+vc_redist\.x64\.exe)"', guide)
+            self.assertIsNotNone(reference, name)
+            path = posixpath.join(posixpath.dirname(name), reference.group(1).replace('\\', '/'))
+            self.assertEqual(posixpath.normpath(path), runtime['path'])
+            matched.append(name)
+        expected = [f'SD-300/Windows/x64/{edition}/{fmt}/README.md'
+                    for edition in ('Corporate', 'Standard') for fmt in ('EXE', 'MSI')]
+        expected.append('SD-300/Windows/x64/Portable/Desktop/ZIP/README.md')
+        self.assertCountEqual(matched, expected)
+
     def test_product_first_windows_editions_have_local_install_commands(self):
         root = Path(__file__).resolve().parents[1]
         spec = json.loads((root / 'bundle-spec.json').read_bytes())

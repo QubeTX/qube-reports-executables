@@ -1,5 +1,11 @@
 ## SD-300 v4.1.0
 
 ```powershell
+$system = if ([Environment]::Is64BitProcess) { "System32" } else { "Sysnative" }
+$runtime = Join-Path $env:WINDIR "$system\vcruntime140.dll"
+if (-not (Test-Path -LiteralPath $runtime)) {
+    Start-Process -FilePath "..\..\Runtime\vc_redist.x64.exe" -Wait -ErrorAction Stop
+    if (-not (Test-Path -LiteralPath $runtime)) { throw "The Microsoft x64 runtime is required for SD-300 Desktop." }
+}
 msiexec.exe /i ".\sd300-windows-x64-global.msi"
 ```

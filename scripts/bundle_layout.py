@@ -1,6 +1,7 @@
 """Platform-first paths and local install commands for verified release assets."""
 from collections import defaultdict
 from pathlib import PurePosixPath
+import posixpath
 
 
 def platform_path(name):
@@ -70,11 +71,30 @@ def install_commands(product, path):
 def command_guides(manifest):
     """Write local commands for each product, target and installer format."""
     sections = defaultdict(list)
+    runtime = next((PurePosixPath(item['path']) for item in manifest.get('prerequisites', [])
+                    if item['path'] == 'SD-300/Windows/x64/Runtime/vc_redist.x64.exe'), None)
+    if runtime:
+        sections[runtime.parent].append(
+            '## Microsoft Visual C++ x64 runtime\n\n```powershell\n'
+            'Start-Process -FilePath ".\\vc_redist.x64.exe" -Wait\n```\n')
     for product in manifest['products']:
         for asset in product['assets']:
             path = PurePosixPath(asset['path'])
             shell = 'powershell' if 'Windows' in path.parts else 'sh'
-            commands = '\n'.join(install_commands(product, path))
+            steps = install_commands(product, path)
+            if (runtime and path.parts[:3] == runtime.parts[:3]
+                    and ('Desktop' in path.parts or path.suffix in ('.msi', '.exe'))):
+                installer = posixpath.relpath(runtime, path.parent).replace('/', '\\')
+                steps = [
+                    '$system = if ([Environment]::Is64BitProcess) { "System32" } else { "Sysnative" }',
+                    '$runtime = Join-Path $env:WINDIR "$system\\vcruntime140.dll"',
+                    'if (-not (Test-Path -LiteralPath $runtime)) {',
+                    f'    Start-Process -FilePath "{installer}" -Wait -ErrorAction Stop',
+                    '    if (-not (Test-Path -LiteralPath $runtime)) { throw "The Microsoft x64 runtime is required for SD-300 Desktop." }',
+                    '}',
+                    *steps,
+                ]
+            commands = '\n'.join(steps)
             fence = "```"
             sections[path.parent].append(f"## {product['id']} {product['tag']}\n\n{fence}{shell}\n{commands}\n{fence}\n")
     return {(folder / 'README.md').as_posix(): '\n'.join(blocks) for folder, blocks in sorted(sections.items())}

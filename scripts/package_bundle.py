@@ -37,6 +37,13 @@ def landing(manifest):
     manuals = ''.join(f'<li><a href="{p["id"]}/Manuals/upstream/README.md">{p["id"]} {p["tag"]} manual</a>'
                       f' · <a href="{p["id"]}/Manuals/RELEASE-NOTES.md">Release notes</a></li>'
                       for p in manifest['products'])
+    runtime = ''
+    if manifest.get('prerequisites'):
+        runtime = ('<p>SD-300 Desktop on Windows uses the Microsoft Visual C++ x64 runtime. '
+                   'If your computer needs it, the Windows command guides open the '
+                   '<a href="SD-300/Windows/x64/Runtime/README.md">included offline runtime installer</a>. '
+                   'IT can install this prerequisite before a Corporate deployment. Windows N also requires '
+                   'the Media Feature Pack for your Windows release.</p>')
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>QubeTX offline bundle {manifest['bundle_version']}</title>
@@ -47,7 +54,7 @@ def landing(manifest):
 <p>Choose your tool, then the destination computer’s operating system and processor. On Windows, choose Standard (Global) for all users or Corporate for your account, then MSI or EXE. For upgrades, use the same edition and format as your existing installation.</p>
 <p>On Mac, the universal PKG supports both Intel and Apple Silicon. The TR-300 and ND-300 compatibility DMGs contain the same PKGs. On Linux, match the processor and C library. Portable CLI and Desktop downloads have separate folders.</p>
 <p>Extract the entire ZIP. Open a terminal in the folder containing your chosen file and run the commands under that tool’s name in its README. Each block installs or opens one tool. SD-300 native installers include its desktop app.</p>
-<p><a href="USER-INSTALL-GUIDE.md">Installation and upgrade guide</a> · <a href="SHA256SUMS.txt">Checksums</a></p></section>
+{runtime}<p><a href="USER-INSTALL-GUIDE.md">Installation and upgrade guide</a> · <a href="SHA256SUMS.txt">Checksums</a></p></section>
 {''.join(sections)}
 <section><h2>Product manuals</h2><ul>{manuals}</ul>
 <p>The manuals, licenses and command guides are available offline. Internet speed tests, public connectivity checks and self-updates need a network connection.</p></section>

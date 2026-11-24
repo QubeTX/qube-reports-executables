@@ -4,6 +4,11 @@ All notable changes to the `qube-reports-executables` distribution repository ar
 
 ---
 
+## [4.0.1] - 2026-11-24
+
+- Include Microsoft's signed x64 Visual C++ runtime installer for SD-300 Desktop and reference it from the Windows desktop installation commands.
+- Include a hand-drawn folding multitool emblem on the offline start page.
+
 ## [4.0.0] - 2026-11-24
 
 - Refresh TR-300 to 4.5.1 and ND-300 to 4.0.2. SD-300 4.1.0 is the current stable release.
