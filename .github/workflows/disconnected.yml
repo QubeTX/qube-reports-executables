@@ -5,35 +5,15 @@ on:
 permissions:
   contents: read
 jobs:
-  install:
-    name: ${{ matrix.os }} ${{ matrix.edition }} ${{ matrix.format }}
-    runs-on: ${{ matrix.os }}
+  runtime:
+    runs-on: windows-2022
     timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - {os: macos-26, format: PKG}
-          - {os: macos-15-intel, format: PKG}
-    env:
-      EDITION: ${{ matrix.edition }}
-      FORMAT: ${{ matrix.format }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
           sparse-checkout: scripts
-      - name: Stage the exact public ZIP before disconnecting
-        shell: bash
-        run: |
-          python scripts/stage-offline-audit.py
-      - name: Run the local packages on a full Windows VM
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./scripts/test-offline-windows.ps1 -FullVM
-      - name: Install local macOS packages under a network-restricted client
-        if: runner.os == 'macOS'
-        run: bash scripts/test-offline-macos.sh
-      - name: Extract and run Linux packages with no network interface
-        if: runner.os == 'Linux'
-        run: bash scripts/test-offline-linux.sh
+      - name: Download the published ZIP before disconnecting
+        run: python scripts/stage-offline-audit.py
+      - name: Install the bundled desktop runtime in a disconnected guest
+        run: ./scripts/test-local-runtime.ps1
