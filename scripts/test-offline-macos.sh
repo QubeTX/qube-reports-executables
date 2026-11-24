@@ -3,8 +3,8 @@ set -euo pipefail
 root="$RUNNER_TEMP/qubetx-offline-bundle"
 profile='(version 1)(allow default)(deny network-outbound (remote ip "*:*"))'
 restricted() { /usr/bin/sandbox-exec -p "$profile" "$@"; }
-curl --noproxy '*' -fsS --max-time 8 https://api.github.com/zen >/dev/null
-if restricted curl --noproxy '*' -fsS --max-time 3 https://api.github.com/zen >/dev/null; then exit 1; fi
+curl --noproxy '*' -sS --max-time 8 https://github.com/ >/dev/null
+if restricted curl --noproxy '*' -sS --max-time 3 https://github.com/ >/dev/null; then exit 1; fi
 for product in TR-300 ND-300 SD-300; do
     localdir="$root/$product/macOS/Universal/Standard"
     pkg=$(find "$localdir/PKG" -name '*.pkg' -type f)

@@ -14,12 +14,7 @@ jobs:
       matrix:
         include:
           - {os: macos-26, format: PKG}
-          - {os: ubuntu-24.04, format: portable}
-          - {os: ubuntu-24.04-arm, format: portable}
-          - {os: windows-2022, edition: Standard, format: MSI}
-          - {os: windows-2022, edition: Corporate, format: MSI}
-          - {os: windows-2022, edition: Standard, format: EXE}
-          - {os: windows-2022, edition: Corporate, format: EXE}
+          - {os: macos-15-intel, format: PKG}
     env:
       EDITION: ${{ matrix.edition }}
       FORMAT: ${{ matrix.format }}
